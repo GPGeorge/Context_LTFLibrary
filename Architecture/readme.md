@@ -1,0 +1,1 @@
+Architecture folder for Claude
