@@ -1,0 +1,1 @@
+Patterns folder for Claude
