@@ -265,7 +265,7 @@ static async Task SeedDataAsync(UserManager<ApplicationUser> userManager, RoleMa
     {
         adminUser = new ApplicationUser
         {
-            UserName = "UserName",
+            UserName = "admin",
             Email = adminEmail,
             FirstName = "System",
             LastName = "Administrator",
@@ -274,11 +274,11 @@ static async Task SeedDataAsync(UserManager<ApplicationUser> userManager, RoleMa
             CreatedDate = DateTime.Now
         };
 
-        var result = await userManager.CreateAsync(adminUser, "Password");
+        var result = await userManager.CreateAsync(adminUser, "Admin123!");
 
         if (result.Succeeded)
         {
-            await userManager.AddToRoleAsync(adminUser, "UserName");
+            await userManager.AddToRoleAsync(adminUser, "Admin");
             Console.WriteLine("=== ADMIN USER CREATED SUCCESSFULLY ===");
         }
         else
@@ -303,4 +303,3 @@ app.MapGet("/debug-user", async (UserManager<ApplicationUser> userManager) =>
     return $"User: {user.UserName}, Email: {user.Email}, IsActive: {user.IsActive}, EmailConfirmed: {user.EmailConfirmed}, Roles: {string.Join(",", roles)}";
 });
 app.Run();
-
