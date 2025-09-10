@@ -1,0 +1,568 @@
+﻿@page "/admin"
+@using LTF_Library_V1.DTOs
+@using LTF_Library_V1.Services
+@using Microsoft.AspNetCore.Authorization
+@inject IRequestManagementService RequestService
+@inject IUserService UserService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Admin Dashboard - Lander Trail Foundation</PageTitle>
+
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1 class="admin-title">Admin Dashboard</h1>
+        <div>
+            <span>Welcome, @CurrentUser?.FullName</span>
+            <button @onclick="LogoutAsync" class="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <div class="admin-nav">
+        <div class="admin-nav-links">
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTab("requests"))"
+               class="admin-nav-link @(ActiveTab == "requests" ? "active" : "")">
+                Pending Requests (@PendingCount)
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTab("users"))"
+               class="admin-nav-link @(ActiveTab == "users" ? "active" : "")">
+                User Management
+            </a>
+            <a href="/" class="admin-nav-link">Back to Search</a>
+        </div>
+    </div>
+
+    @if (ActiveTab == "requests")
+    {
+        <div class="request-queue">
+            <div class="request-queue-header">
+                <h3>Pending Publication Requests</h3>
+                <button @onclick="RefreshRequests" class="btn-base btn-secondary">Refresh</button>
+            </div>
+
+            @if (IsLoading)
+            {
+                <div style="padding: 40px; text-align: center;">
+                    <p>Loading requests...</p>
+                </div>
+            }
+            else if (PendingRequests?.Any() == true)
+            {
+                <table class="request-table">
+                    <thead>
+                        <tr>
+                            <th>Publication</th>
+                            <th>Requester</th>
+                            <th>Type</th>
+                            <th>Purpose</th>
+                            <th>Date</th>
+                            <th>Days Ago</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in PendingRequests)
+                        {
+                            <tr>
+                                <td class="publication-title" title="@request.PublicationTitle">
+                                    @request.PublicationTitle
+                                </td>
+                                <td class="requester-name">
+                                    <div>@request.RequesterName</div>
+                                    <div style="font-size: 0.8em; color: #666;">@request.Email</div>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-pending">@request.RequestType</span>
+                                </td>
+                                <td>@request.ResearchPurpose</td>
+                                <td class="request-date">@request.FormattedRequestDate</td>
+                                <td>
+                                    <span class="@(request.DaysAgo > 7 ? "text-danger" : request.DaysAgo > 3 ? "text-warning" : "")">
+                                        @request.DaysAgo days
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="request-actions">
+                                        <button @onclick="@(() => ViewRequest(request))" class="action-btn view-btn">
+                                            View
+                                        </button>
+                                        <button @onclick="@(() => ShowProcessModal(request, "Approve"))" class="action-btn approve-btn">
+                                            Approve
+                                        </button>
+                                        <button @onclick="@(() => ShowProcessModal(request, "Deny"))" class="action-btn deny-btn">
+                                            Deny
+                                        </button>
+                                        <button @onclick="@(() => ShowProcessModal(request, "RequestInfo"))" class="action-btn info-btn">
+                                            Info
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div style="padding: 40px; text-align: center; color: #666;">
+                    <p>No pending requests at this time.</p>
+                </div>
+            }
+        </div>
+    }
+
+    @if (ActiveTab == "users")
+    {
+        <div class="request-queue">
+            <div class="request-queue-header">
+                <h3>User Management</h3>
+                <button @onclick="RefreshUsers" class="btn-base btn-secondary">Refresh</button>
+            </div>
+
+            @if (IsLoadingUsers)
+            {
+                <div style="padding: 40px; text-align: center;">
+                    <p>Loading users...</p>
+                </div>
+            }
+            else if (Users?.Any() == true)
+            {
+                <table class="request-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Users)
+                        {
+                            <tr>
+                                <td>@user.FullName</td>
+                                <td>@user.Username</td>
+                                <td>@user.Email</td>
+                                <td>
+                                    <div class="user-roles">
+                                        @foreach (var role in user.Roles)
+                                        {
+                                            <span class="role-badge">@role</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge @(user.IsActive ? "status-approved" : "status-denied")">
+                                        @(user.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td class="request-date">
+                                    @(user.LastLoginDate?.ToString("MMM dd, yyyy") ?? "Never")
+                                </td>
+                                <td>
+                                    <div class="request-actions">
+                                        @if (user.IsActive)
+                                        {
+                                            <button @onclick="@(() => DeactivateUser(user.Id))" class="action-btn deny-btn">
+                                                Deactivate
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button @onclick="@(() => ActivateUser(user.Id))" class="action-btn approve-btn">
+                                                Activate
+                                            </button>
+                                        }
+                                        <button @onclick="@(() => ShowRoleModal(user))" class="action-btn info-btn">
+                                            Roles
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div style="padding: 40px; text-align: center; color: #666;">
+                    <p>No users found.</p>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Request Processing Modal -->
+@if (ShowProcessingModal && SelectedRequest != null)
+{
+    <div class="modal" @onclick="CloseProcessingModal">
+        <div class="modal-content" @onclick:stopPropagation="true" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Process Request</h2>
+                <button class="close-btn" @onclick="CloseProcessingModal">&times;</button>
+            </div>
+
+            <div class="processing-form">
+                <h3 style="color: #3498db; margin-bottom: 10px;">@SelectedRequest.PublicationTitle</h3>
+                <p><strong>Requester:</strong> @SelectedRequest.RequesterName (@SelectedRequest.Email)</p>
+                <p><strong>Request Type:</strong> @SelectedRequest.RequestType</p>
+                <p><strong>Research Purpose:</strong> @SelectedRequest.ResearchPurpose</p>
+                @if (!string.IsNullOrEmpty(SelectedRequest.AdditionalInfo))
+                {
+                    <p><strong>Additional Info:</strong> @SelectedRequest.AdditionalInfo</p>
+                }
+
+                <EditForm Model="ProcessRequest" OnValidSubmit="ProcessRequestAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="action-selection">
+                        <label style="font-weight: bold; color: #2c3e50;">Action:</label>
+                        <div class="action-options">
+                            <div class="action-option @(ProcessRequest.Action == "Approve" ? "selected" : "")"
+                                 @onclick="@(() => ProcessRequest.Action = "Approve")">
+                                <input type="radio" name="action" checked="@(ProcessRequest.Action == "Approve")"
+                                       @onchange="@(() => ProcessRequest.Action = "Approve")" />
+                                <label>Approve Request - Grant access to the publication</label>
+                            </div>
+                            <div class="action-option @(ProcessRequest.Action == "Deny" ? "selected" : "")"
+                                 @onclick="@(() => ProcessRequest.Action = "Deny")">
+                                <input type="radio" name="action" checked="@(ProcessRequest.Action == "Deny")"
+                                       @onchange="@(() => ProcessRequest.Action = "Deny")" />
+                                <label>Deny Request - Decline access to the publication</label>
+                            </div>
+                            <div class="action-option @(ProcessRequest.Action == "RequestInfo" ? "selected" : "")"
+                                 @onclick="@(() => ProcessRequest.Action = "RequestInfo")">
+                                <input type="radio" name="action" checked="@(ProcessRequest.Action == "RequestInfo")"
+                                       @onchange="@(() => ProcessRequest.Action = "RequestInfo")" />
+                                <label>Request More Information - Ask for additional details</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="adminNotes">Admin Notes (optional):</label>
+                        <InputTextArea @bind-Value="ProcessRequest.AdminNotes" id="adminNotes"
+                                       placeholder="Add any notes or instructions for the requester..." />
+                    </div>
+
+                    <div style="text-align: center; margin-top: 25px;">
+                        <button type="submit" class="btn-base btn-success" disabled="@IsProcessing">
+                            @if (IsProcessing)
+                            {
+                                <span>Processing...</span>
+                            }
+                            else
+                            {
+                                <span>@GetActionButtonText()</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Role Management Modal -->
+@if (ShowRoleModalFlag && SelectedUser != null)
+{
+    <div class="modal" @onclick="CloseRoleModal">
+        <div class="modal-content" @onclick:stopPropagation="true" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Manage User Roles</h2>
+                <button class="close-btn" @onclick="CloseRoleModal">&times;</button>
+            </div>
+
+            <div class="processing-form">
+                <h3 style="color: #3498db; margin-bottom: 15px;">@SelectedUser.FullName</h3>
+
+                <div class="form-field">
+                    <label>Current Roles:</label>
+                    <div class="user-roles" style="margin-top: 10px;">
+                        @foreach (var role in SelectedUser.Roles)
+                        {
+                            <span class="role-badge">@role</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>Available Actions:</label>
+                    <div style="margin-top: 10px;">
+                        @if (!SelectedUser.Roles.Contains("Admin"))
+                        {
+                            <button @onclick="@(() => AssignRole(SelectedUser.Id, "Admin"))" class="btn-base btn-primary" style="margin: 5px;">
+                                Make Admin
+                            </button>
+                        }
+                        else if (SelectedUser.Roles.Contains("Admin") && SelectedUser.Id != CurrentUser?.Id)
+                        {
+                            <button @onclick="@(() => RemoveRole(SelectedUser.Id, "Admin"))" class="btn-base btn-secondary" style="margin: 5px;">
+                                Remove Admin
+                            </button>
+                        }
+
+                        @if (!SelectedUser.Roles.Contains("Staff"))
+                        {
+                            <button @onclick="@(() => AssignRole(SelectedUser.Id, "Staff"))" class="btn-base btn-primary" style="margin: 5px;">
+                                Make Staff
+                            </button>
+                        }
+                        else
+                        {
+                            <button @onclick="@(() => RemoveRole(SelectedUser.Id, "Staff"))" class="btn-base btn-secondary" style="margin: 5px;">
+                                Remove Staff
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // State management
+    private string ActiveTab = "requests";
+    private bool IsLoading = true;
+    private bool IsLoadingUsers = false;
+    private bool IsProcessing = false;
+
+    // Data
+    private List<PendingRequestDto>? PendingRequests;
+    private List<UserDto>? Users;
+    private UserDto? CurrentUser;
+    private int PendingCount => PendingRequests?.Count ?? 0;
+
+    // Modal state
+    private bool ShowProcessingModal = false;
+    private bool ShowRoleModalFlag = false;
+    private PendingRequestDto? SelectedRequest;
+    private UserDto? SelectedUser;
+    private ProcessRequestDto ProcessRequest = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            CurrentUser = await UserService.GetCurrentUserAsync();
+            await LoadPendingRequests();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error initializing admin dashboard: {ex.Message}");
+        }
+    }
+
+    private async Task LoadPendingRequests()
+    {
+        IsLoading = true;
+        try
+        {
+            PendingRequests = await RequestService.GetPendingRequestsAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading requests: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        IsLoadingUsers = true;
+        try
+        {
+            Users = await UserService.GetAllUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading users: {ex.Message}");
+        }
+        finally
+        {
+            IsLoadingUsers = false;
+        }
+    }
+
+    private async Task SetActiveTab(string tab)
+    {
+        ActiveTab = tab;
+        if (tab == "users" && Users == null)
+        {
+            await LoadUsers();
+        }
+    }
+
+    private async Task RefreshRequests()
+    {
+        await LoadPendingRequests();
+    }
+
+    private async Task RefreshUsers()
+    {
+        await LoadUsers();
+    }
+
+    private async Task ViewRequest(PendingRequestDto request)
+    {
+        var details = $"Publication: {request.PublicationTitle}\n\n" +
+                     $"Requester: {request.RequesterName}\n" +
+                     $"Email: {request.Email}\n" +
+                     $"Phone: {request.Phone ?? "Not provided"}\n\n" +
+                     $"Request Type: {request.RequestType}\n" +
+                     $"Research Purpose: {request.ResearchPurpose}\n\n" +
+                     $"Additional Information:\n{request.AdditionalInfo ?? "None provided"}\n\n" +
+                     $"Requested: {request.FormattedRequestDate}";
+
+        await JSRuntime.InvokeVoidAsync("alert", details);
+    }
+
+    private void ShowProcessModal(PendingRequestDto request, string defaultAction)
+    {
+        SelectedRequest = request;
+        ProcessRequest = new ProcessRequestDto
+        {
+            RequestID = request.RequestID,
+            Action = defaultAction,
+            ProcessedBy = CurrentUser?.Username ?? "Admin"
+        };
+        ShowProcessingModal = true;
+    }
+
+    private void CloseProcessingModal()
+    {
+        ShowProcessingModal = false;
+        SelectedRequest = null;
+        ProcessRequest = new();
+    }
+
+    private void ShowRoleModal(UserDto user)
+    {
+        SelectedUser = user;
+        ShowRoleModalFlag = true;
+    }
+
+    private void CloseRoleModal()
+    {
+        ShowRoleModalFlag = false;
+        SelectedUser = null;
+    }
+
+    private async Task ProcessRequestAsync()
+    {
+        IsProcessing = true;
+        try
+        {
+            var result = await RequestService.ProcessRequestAsync(ProcessRequest);
+            if (result.Success)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", result.Message);
+                CloseProcessingModal();
+                await LoadPendingRequests();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {result.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error processing request: {ex.Message}");
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private async Task DeactivateUser(string userId)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to deactivate this user?"))
+        {
+            var success = await UserService.DeactivateUserAsync(userId);
+            if (success)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "User deactivated successfully.");
+                await LoadUsers();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Error deactivating user.");
+            }
+        }
+    }
+
+    private async Task ActivateUser(string userId)
+    {
+        var success = await UserService.ActivateUserAsync(userId);
+        if (success)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "User activated successfully.");
+            await LoadUsers();
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Error activating user.");
+        }
+    }
+
+    private async Task AssignRole(string userId, string roleName)
+    {
+        var success = await UserService.AssignRoleAsync(userId, roleName);
+        if (success)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Role '{roleName}' assigned successfully.");
+            await LoadUsers();
+            CloseRoleModal();
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error assigning role '{roleName}'.");
+        }
+    }
+
+    private async Task RemoveRole(string userId, string roleName)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to remove the '{roleName}' role?"))
+        {
+            var success = await UserService.RemoveFromRoleAsync(userId, roleName);
+            if (success)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Role '{roleName}' removed successfully.");
+                await LoadUsers();
+                CloseRoleModal();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error removing role '{roleName}'.");
+            }
+        }
+    }
+
+    private async Task LogoutAsync()
+    {
+        await UserService.LogoutAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    private string GetActionButtonText()
+    {
+        return ProcessRequest.Action switch
+        {
+            "Approve" => "Approve Request",
+            "Deny" => "Deny Request",
+            "RequestInfo" => "Request More Info",
+            _ => "Process Request"
+        };
+    }
+}

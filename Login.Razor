@@ -1,0 +1,296 @@
+﻿@page "/login"
+@using LTF_Library_V1.DTOs
+@using LTF_Library_V1.Services
+@inject IUserService UserService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject HttpClient Http
+<PageTitle>Login - Lander Trail Foundation</PageTitle>
+
+<div class="main-layout">
+    <!-- Left Panel - Same Intro as Collection Page -->
+    <div class="intro-panel">
+        <header class="collection-header">
+            <img src="images/LanderTrailLogo.jpg" alt="LTF Library Logo" class="header-logo" />
+            <div class="header-text">
+                <h1>Lander Trail Foundation</h1>
+                <p>Preserving History Through Books, Periodicals, Audio Recordings, and Documents</p>
+            </div>
+        </header>
+
+        <div class="visitor-info-section">
+            <h2>Library Staff Access</h2>
+            <p>This login system is for library staff and administrators to manage publication requests and user accounts.</p>
+
+            <div class="visitor-info">
+                <div class="info-box">
+                    <h3>📞 Need Help?</h3>
+                    <p>
+                        Contact the library administrator<br>
+                        <strong>Phone:</strong> (307) 883-2174<br>
+                        <strong>Email:</strong> mspotten@hotmail.com
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation-links">
+            <a href="../" class="back-link">← Back to Search</a>
+        </div>
+    </div>
+
+    <!-- Right Panel - Login Form -->
+    <div class="search-panel">
+        <div class="search-controls-fixed">
+            <div class="login-header">
+                <h2>Staff Login</h2>
+                <p>Enter your credentials to access the admin dashboard</p>
+            </div>
+
+            <div class="advanced-search-form">
+                <EditForm Model="LoginModel" OnValidSubmit="LoginAsync">
+                    <DataAnnotationsValidator />
+
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="validation-errors">
+                            @ErrorMessage
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(SuccessMessage))
+                    {
+                        <div style="color: #27ae60; margin-bottom: 15px; font-weight: bold;">
+                            @SuccessMessage
+                        </div>
+                    }
+
+                    <div class="login-form">
+                        <div class="form-field">
+                            <label for="username">Username:</label>
+                            <InputText @bind-Value="LoginModel.Username" id="username"
+                                       class="form-input-search" placeholder="Enter your username" />
+                            <ValidationMessage For="() => LoginModel.Username" />
+                        </div>
+
+                        <div class="form-field">
+                            <label for="password">Password:</label>
+                            <InputText @bind-Value="LoginModel.Password" id="password"
+                                       type="password" class="form-input-search" placeholder="Enter your password" />
+                            <ValidationMessage For="() => LoginModel.Password" />
+                        </div>
+
+                        <div class="remember-me">
+                            <InputCheckbox @bind-Value="LoginModel.RememberMe" id="rememberMe" />
+                            <label for="rememberMe">Remember me</label>
+                        </div>
+
+                        <div class="login-actions">
+                            <button type="submit" class="btn-base btn-primary" disabled="@IsLoggingIn">
+                                @if (IsLoggingIn)
+                                {
+                                    <span>Logging in...</span>
+                                }
+                                else
+                                {
+                                    <span>Login</span>
+                                }
+                            </button>
+
+                            <button type="button" @onclick="ShowRegistrationForm" class="btn-base btn-secondary">
+                                Create New Account
+                            </button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        @if (ShowRegisterForm)
+        {
+            <div class="search-results-scrollable">
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px;">
+                    <h3 style="color: #2c3e50; margin-bottom: 15px;">Create New Staff Account</h3>
+
+                    <EditForm Model="RegisterModel" OnValidSubmit="RegisterAsync">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="firstName">First Name:</label>
+                                <InputText @bind-Value="RegisterModel.FirstName" id="firstName" />
+                                <ValidationMessage For="() => RegisterModel.FirstName" />
+                            </div>
+                            <div class="form-field">
+                                <label for="lastName">Last Name:</label>
+                                <InputText @bind-Value="RegisterModel.LastName" id="lastName" />
+                                <ValidationMessage For="() => RegisterModel.LastName" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="regUsername">Username:</label>
+                                <InputText @bind-Value="RegisterModel.Username" id="regUsername" />
+                                <ValidationMessage For="() => RegisterModel.Username" />
+                            </div>
+                            <div class="form-field">
+                                <label for="regEmail">Email:</label>
+                                <InputText @bind-Value="RegisterModel.Email" id="regEmail" type="email" />
+                                <ValidationMessage For="() => RegisterModel.Email" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="regPassword">Password:</label>
+                                <InputText @bind-Value="RegisterModel.Password" id="regPassword" type="password" />
+                                <ValidationMessage For="() => RegisterModel.Password" />
+                            </div>
+                            <div class="form-field">
+                                <label for="confirmPassword">Confirm Password:</label>
+                                <InputText @bind-Value="RegisterModel.ConfirmPassword" id="confirmPassword" type="password" />
+                                <ValidationMessage For="() => RegisterModel.ConfirmPassword" />
+                            </div>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 20px;">
+                            <button type="submit" class="btn-base btn-success" disabled="@IsRegistering">
+                                @if (IsRegistering)
+                                {
+                                    <span>Creating Account...</span>
+                                }
+                                else
+                                {
+                                    <span>Create Account</span>
+                                }
+                            </button>
+                            <button type="button" @onclick="() => ShowRegisterForm = false" class="btn-base btn-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="search-results-scrollable">
+                <div class="search-prompt">
+                    <h3>Welcome to the Library Management System</h3>
+                    <p>Please log in with your staff credentials to access the admin dashboard and manage publication requests.</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private LoginDto LoginModel = new();
+    private RegisterDto RegisterModel = new();
+    private bool IsLoggingIn = false;
+    private bool IsRegistering = false;
+    private bool ShowRegisterForm = false;
+    private string? ErrorMessage;
+    private string? SuccessMessage;
+    public class LoginResponse
+    {
+        public bool success
+        {
+            get; set;
+        }
+        public string message { get; set; } = string.Empty;
+    }
+    
+    private async Task LoginAsync()
+    {
+        IsLoggingIn = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            var baseUri = Navigation.BaseUri;
+            var loginUrl = $"{baseUri}Account/login";
+
+            Console.WriteLine($"Posting to: {loginUrl}");
+            Console.WriteLine($"LoginModel: Username={LoginModel.Username}, Password length={LoginModel.Password?.Length}, RememberMe={LoginModel.RememberMe}");
+
+            var response = await Http.PostAsJsonAsync(loginUrl, LoginModel);
+
+            Console.WriteLine($"Response status: {response.StatusCode}");
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response content: {responseContent}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                if (result?.success == true)
+                {
+                    SuccessMessage = "Login successful! Redirecting...";
+                    await Task.Delay(1000);
+                    Navigation.NavigateTo("/admin", forceLoad: true);
+                }
+                else
+                {
+                    ErrorMessage = result?.message ?? "Login failed";
+                }
+            }
+            else
+            {
+                ErrorMessage = $"Server error: {response.StatusCode} - {responseContent}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Login exception: {ex.Message}");
+            ErrorMessage = $"Login failed: {ex.Message}";
+        }
+        finally
+        {
+            IsLoggingIn = false;
+        }
+    }
+    private async Task RegisterAsync()
+    {
+        IsRegistering = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            var result = await UserService.RegisterAsync(RegisterModel);
+
+            if (result.Success)
+            {
+                SuccessMessage = "Account created successfully! You can now log in.";
+                ShowRegisterForm = false;
+                RegisterModel = new(); // Reset form
+            }
+            else
+            {
+                ErrorMessage = result.Message;
+                if (result.Errors.Any())
+                {
+                    ErrorMessage += ": " + string.Join(", ", result.Errors);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Registration failed: {ex.Message}";
+        }
+        finally
+        {
+            IsRegistering = false;
+        }
+    }
+
+    private void ShowRegistrationForm()
+    {
+        ShowRegisterForm = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+    }
+}

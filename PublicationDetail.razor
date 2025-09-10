@@ -1,0 +1,444 @@
+﻿@page "/publication/{id:int}"
+@using LTF_Library_V1.DTOs
+@using LTF_Library_V1.Services
+@using System.ComponentModel.DataAnnotations
+@inject IPublicationService PublicationService
+@inject IRequestService RequestService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<PageTitle>@(Publication?.PublicationTitle ?? "Publication Details") - Lander Trail Foundation</PageTitle>
+
+@if (Publication != null)
+{
+    <div class="main-layout">
+        <!-- Left Panel - Same Intro as Collection Page -->
+        <div class="intro-panel">
+            <header class="collection-header">
+                <img src="images\LanderTrailLogo.jpg" alt="LTF Library Logo" class="header-logo" />
+                <div class="header-text">
+                    <h1>Lander Trail Foundation</h1>
+                    <p>Preserving History Through Books, Periodicals, and Audio Recordings & Documents</p>
+                </div>
+            </header>
+
+            <div class="visitor-info-section">
+                <h2>Welcome to the Lander Trail Foundation Historical Book Collection</h2>
+                <p>
+                    Lander Trail Foundation maintains one of the region's most comprehensive collections of historical books, periodicals, newspapers, and archival materials.
+                    Dating from the early 1800s to the present, our collection serves researchers, students, genealogists, and history enthusiasts from our location in Afton, Wyoming.
+                </p>
+
+                <div class="visitor-info">
+                    <div class="info-box">
+                        <h3>📅 Visiting Hours</h3>
+                        <p>
+                            <strong>Memorial Day Weekend to Labor Day Weekend</strong><br>
+                            <strong>Wednesday - Saturday:</strong> 12:30 PM - 5:30 PM<br>
+                            <strong>Closed:</strong> Sundays, Mondays & Major Holidays
+                        </p>
+                    </div>
+                    <div class="info-box">
+                        <h3>📍 Location & Contact</h3>
+                        <p>
+                            <strong>Address:</strong> 140 West 1st Avenue<br>
+                            Afton, WY 83110<br>
+                            <strong>Phone:</strong> (307) 883-2174<br>
+                            <strong>Email:</strong> mspotten@hotmail.com
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navigation-links">
+                <a href="collection" class="back-link">← Back to Search</a>
+            </div>
+        </div>
+
+        <!-- Right Panel - Publication Details -->
+        <div class="detail-panel">
+            <div class="detail-header">
+                <div class="detail-cover">
+                    @if (!string.IsNullOrEmpty(Publication.CoverPhotoLink))
+                    {
+                        <img src="@Publication.CoverPhotoLink" alt="Cover of @Publication.PublicationTitle" class="detail-cover-image" />
+                    }
+                    else
+                    {
+                        <div class="detail-no-cover">
+                            <span>No Cover Image Available</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="detail-title-section">
+                    <h1 class="detail-title">@Publication.PublicationTitle</h1>
+                    @if (!string.IsNullOrEmpty(string.Join(", ", Publication.Authors)))
+                    {
+                        <h2 class="detail-authors">by @(string.Join(", ", Publication.Authors))</h2>
+                    }
+                </div>
+            </div>
+
+            <div class="detail-content">
+                <div class="detail-section">
+                    <h3>Publication Information</h3>
+                    <div class="detail-grid">
+                        @if (!string.IsNullOrEmpty(Publication.YearPublished))
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Year Published</span>
+                                <span class="detail-value">@Publication.YearPublished</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Publication.PublisherName))
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Publisher</span>
+                                <span class="detail-value">@Publication.PublisherName</span>
+                            </div>
+                        }
+
+                        <div class="detail-item">
+                            <span class="detail-label">Material Type</span>
+                            <span class="detail-value">@Publication.MediaTypeName</span>
+                        </div>
+
+                        @if (Publication.Volume.HasValue && Publication.NumberOfVolumes.HasValue)
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Volume</span>
+                                <span class="detail-value">@Publication.Volume of @Publication.NumberOfVolumes</span>
+                            </div>
+                        }
+
+                        @if (Publication.Pages.HasValue)
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Pages</span>
+                                <span class="detail-value">@Publication.Pages</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Publication.ISBN))
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">ISBN</span>
+                                <span class="detail-value">@Publication.ISBN</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Publication.Edition))
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Edition</span>
+                                <span class="detail-value">@Publication.Edition</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Publication.MediaConditionName))
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Condition</span>
+                                <span class="detail-value">@Publication.MediaConditionName</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Publication.CatalogNumber))
+                        {
+                            <div class="detail-item">
+                                <span class="detail-label">Catalog Number</span>
+                                <span class="detail-value">@Publication.CatalogNumber</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (Publication.Categories.Any())
+                {
+                    <div class="detail-section">
+                        <h3>Categories</h3>
+                        <div class="categories-list">
+                            @foreach (var category in Publication.Categories)
+                            {
+                                <span class="category-tag">@category</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Publication.Comments))
+                {
+                    <div class="detail-section">
+                        <h3>Description</h3>
+                        <p class="description-text">@Publication.Comments</p>
+                    </div>
+                }
+
+                @if (Publication.Keywords.Any())
+                {
+                    <div class="detail-section">
+                        <h3>Keywords</h3>
+                        <div class="keywords-list">
+                            @foreach (var keyword in Publication.Keywords)
+                            {
+                                <span class="keyword-tag">@keyword</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Publication.ShelfLocation))
+                {
+                    <div class="detail-section">
+                        <h3>Library Information</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Shelf Location</span>
+                                <span class="detail-value">@Publication.ShelfLocation</span>
+                            </div>
+                            @if (Publication.ConfidenceLevel.HasValue)
+                            {
+                                <div class="detail-item">
+                                    <span class="detail-label">Record Confidence</span>
+                                    <span class="detail-value">@Publication.ConfidenceLevel%</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="detail-actions">
+                <h3>Request This Item</h3>
+                <p>Submit a request to access this historical material:</p>
+                <button @onclick="ShowRequestModal" @onclick:preventDefault="true" class="request-btn-detail">
+                    Submit Request Form
+                </button>
+                <p class="contact-note">
+                    Or call <strong>(307) 883-2174</strong> during visiting hours.
+                </p>
+            </div>
+          @*   <div class="detail-actions">
+                <h3>Request This Item</h3>
+                <p>Contact the library to request access to this historical material:</p>
+                <a href="mailto:mspotten@hotmail.com?subject=Request for: @Uri.EscapeDataString(Publication.PublicationTitle)&body=I would like to request access to the following item:%0D%0A%0D%0ATitle: @Uri.EscapeDataString(Publication.PublicationTitle)%0D%0AAuthor(s): @Uri.EscapeDataString(string.Join(", ", Publication.Authors))%0D%0AYear: @Publication.YearPublished%0D%0A%0D%0APlease let me know about availability and access procedures.%0D%0A%0D%0AThank you!"
+                   class="request-email-btn">
+                    Send Email Request
+                </a>
+                <p class="contact-note">
+                    Or call <strong>(307) 883-2174</strong> during visiting hours.
+                </p>
+            </div> *@
+        </div>
+    </div>
+}
+else if (IsLoading)
+{
+    <div class="loading-container">
+        <div class="loading-message">
+            <h2>Loading publication details...</h2>
+        </div>
+    </div>
+}
+else
+{
+    <div class="error-container">
+        <div class="error-message">
+            <h2>Publication Not Found</h2>
+            <p>The requested publication could not be found.</p>
+            <a href="/" class="back-link">← Return to Search</a>
+        </div>
+    </div>
+}
+<!-- Request Modal -->
+@if (ShowRequestModalFlag && Publication != null)
+{
+    <div class="modal" @onclick="CloseRequestModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">Request Historical Material</h2>
+                <button class="close-btn" @onclick="CloseRequestModal">&times;</button>
+            </div>
+
+            <h3 style="color: #3498db; margin-bottom: 20px;">@Publication.PublicationTitle</h3>
+
+            <EditForm Model="RequestForm" OnValidSubmit="SubmitRequest">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="request-form">
+                    <div class="request-type">
+                        <label style="font-weight: bold; color: #2c3e50;">Request Type:</label>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="requestType" checked="@(RequestForm.RequestType == "Borrow")" @onchange="@(() => RequestForm.RequestType = "Borrow")" id="borrowItem" />
+                                <label for="borrowItem">Borrow Physical Item</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="requestType" checked="@(RequestForm.RequestType == "Abstract")" @onchange="@(() => RequestForm.RequestType = "Abstract")" id="viewAbstract" />
+                                <label for="viewAbstract">View/Download Abstract (PDF)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="firstName">First Name *</label>
+                            <InputText @bind-Value="RequestForm.FirstName" id="firstName" />
+                        </div>
+                        <div class="form-field">
+                            <label for="lastName">Last Name *</label>
+                            <InputText @bind-Value="RequestForm.LastName" id="lastName" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="email">Email Address *</label>
+                            <InputText @bind-Value="RequestForm.Email" id="email" type="email" />
+                        </div>
+                        <div class="form-field">
+                            <label for="phone">Phone Number</label>
+                            <InputText @bind-Value="RequestForm.Phone" id="phone" type="tel" />
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="researchPurpose">Research Purpose *</label>
+                        <InputSelect @bind-Value="RequestForm.ResearchPurpose" id="researchPurpose">
+                            <option value="">Select purpose...</option>
+                            <option value="Academic Research">Academic Research</option>
+                            <option value="Genealogical Study">Genealogical Study</option>
+                            <option value="Historical Research">Historical Research</option>
+                            <option value="Personal Interest">Personal Interest</option>
+                            <option value="Publication/Writing">Publication/Writing</option>
+                            <option value="Educational Project">Educational Project</option>
+                            <option value="Other">Other</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="additionalInfo">Additional Information or Special Requests</label>
+                        <InputTextArea @bind-Value="RequestForm.AdditionalInfo" id="additionalInfo"
+                                       placeholder="Please provide any additional details about your research or special handling requirements..." />
+                    </div>
+
+                    <div style="text-align: center; margin-top: 25px;">
+                        <button type="submit" class="submit-request-btn" disabled="@IsSubmittingRequest">
+                            @if (IsSubmittingRequest)
+                            {
+                                <span>Submitting...</span>
+                            }
+                            else
+                            {
+                                <span>Submit Request</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+ 
+@code {
+    [Parameter]
+    public int Id
+    {
+        get; set;
+    }
+
+    private PublicationDetailDto? Publication;
+    private bool IsLoading = true;
+
+    // Modal and form properties
+    private bool ShowRequestModalFlag = false;
+    private bool IsSubmittingRequest = false;
+    private RequestFormModel RequestForm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Publication = await PublicationService.GetPublicationDetailAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            // Log error if needed
+            Publication = null;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    // Modal methods
+    private void ShowRequestModal()
+    {
+        ShowRequestModalFlag = true;
+        RequestForm = new RequestFormModel(); // Reset form
+    }
+
+    private void CloseRequestModal()
+    {
+        ShowRequestModalFlag = false;
+        RequestForm = new RequestFormModel(); // Reset form
+    }
+
+    // Form submission
+    private async Task SubmitRequest()
+    {
+        IsSubmittingRequest = true;
+
+        try
+        {
+            // Submit the request to the database
+            bool success = await RequestService.SubmitRequestAsync(RequestForm, Publication);
+
+            if (success)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Request submitted successfully! We will contact you soon.");
+                CloseRequestModal();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Error submitting request. Please try again or contact us directly at (307) 883-2174.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+            await JSRuntime.InvokeVoidAsync("alert", $"Error submitting request: {ex.Message}. Please contact us directly at (307) 883-2174.");
+        }
+        finally
+        {
+            IsSubmittingRequest = false;
+        }
+    }
+
+    // Request form model class
+    public class RequestFormModel
+    {
+        [Required(ErrorMessage = "First name is required")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last name is required")]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address")]
+        public string Email { get; set; } = string.Empty;
+
+        public string Phone { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please select a research purpose")]
+        public string ResearchPurpose { get; set; } = string.Empty;
+
+        public string AdditionalInfo { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please select a request type")]
+        public string RequestType { get; set; } = "Borrow";
+    }
+}

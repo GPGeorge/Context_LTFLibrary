@@ -1,0 +1,625 @@
+﻿@page "/"
+@page "/collection"
+@page "/collection/search"
+@using LTF_Library_V1.DTOs
+@using Microsoft.EntityFrameworkCore
+@using LTF_Library_V1.Data.Models
+@using LTF_Library_V1.Services
+@inject IPublicationService PublicationService
+@inject IJSRuntime JSRuntime
+@using LTF_Library_V1.Components
+
+<PageTitle>Lander Trail Foundation - Search</PageTitle>
+
+<div class="main-layout">
+    <!-- Left Panel - Introduction -->
+    <div class="intro-panel">
+        <header class="collection-header">
+            <img src="images/LanderTrailLogo.jpg" alt="LTF Library Logo" class="header-logo" />
+            <div class="header-text">
+                <h1>Lander Trail Foundation</h1>
+                <p>Preserving History Through Books, Periodicals, Audio Recordings, and Documents</p>
+            </div>
+        </header>
+
+        <div class="visitor-info-section">
+            <h2>Welcome to the Lander Trail Foundation Historical Book Collection</h2>
+            <p>Lander Trail Foundation maintains one of the region's most comprehensive collections of historical books, periodicals, newspapers, and archival materials. 
+                Dating from the early 1800s to the present, our collection serves researchers, students, genealogists, and history enthusiasts from our location in Afton, Wyoming.</p>
+            
+            <div class="visitor-info">
+                <div class="info-box">
+                    <h3>📅 Visiting Hours</h3>
+                    <p><strong>Memorial Day Weekend to Labor Day Weekend</strong><br>
+                    <strong>Wednesday - Saturday:</strong> 12:30 PM - 5:30 PM<br>
+                    <strong>Closed:</strong> Sundays, Mondays & Major Holidays</p>
+                </div>
+                <div class="info-box">
+                    <h3>📍 Location & Contact</h3>
+                    <p>
+                        <strong>Address:</strong> 140 West 1st Avenue<br>
+                        Afton, WY 83110<br>
+                        <strong>Phone:</strong> (307) 883-2174<br>
+                        <strong>Email:</strong> mspotten@hotmail.com
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number">@TotalPublications</span>
+                <span class="stat-label">Historical Books</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">@TotalPeriodicals</span>
+                <span class="stat-label">Periodicals</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">@TotalAudioRecordings</span>
+                <span class="stat-label">Audio Recordings</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">@TotalNewspapers</span>
+                <span class="stat-label">Newspaper Archives</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">200+</span>
+                <span class="stat-label">Years Covered</span>
+            </div>
+        </div>
+    </div>
+    <AdminNavigation />
+
+    <!-- Right Panel - Search -->
+    <div class="search-panel">
+        <!-- Fixed Search Controls -->
+        <div class="search-controls-fixed">
+            <div class="search-header">
+                <h2>Search Our Collection</h2>
+                <p>@TotalPublications books, @TotalPeriodicals periodicals, @TotalAudioRecordings audio recordings and other historical materials</p>
+            </div>
+            
+            <div class="advanced-search-form">
+                <div class="search-row">
+                    <div class="search-field">
+                        <label for="titleSearch">Title:</label>
+                        <input type="text" @bind="SearchCriteria.Title" @bind:event="oninput"
+                               placeholder="Enter book or publication title..." />
+                    </div>
+                    <div class="search-field">
+                        <label for="authorSearch">Author:</label>
+                        <select @bind="SearchCriteria.CreatorId">
+                            <option value="">All Authors</option>
+                            @if (Authors != null)
+                            {
+                                @foreach (var author in Authors)
+                                {
+                                    <option value="@author.CreatorID">@author.FullName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="search-row">
+                    <div class="search-field">
+                        <label for="categorySearch">Category:</label>
+                        <select @bind="SearchCriteria.GenreId">
+                            <option value="">All Categories</option>
+                            @if (Genres != null)
+                            {
+                                @foreach (var genre in Genres)
+                                {
+                                    <option value="@genre.GenreID">@genre.Genre</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="search-field">
+                        <label for="mediaTypeSearch">Material Type:</label>
+                        <select @bind="SearchCriteria.MediaTypeId">
+                            <option value="">All Types</option>
+                            @if (MediaTypes != null)
+                            {
+                                @foreach (var mediaType in MediaTypes)
+                                {
+                                    <option value="@mediaType.MediaTypeID">@mediaType.MediaType</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="search-actions">
+                    <button @onclick="PerformSearch" class="search-btn" disabled="@IsSearching">
+                        @if (IsSearching)
+                        {
+                            <span>Searching...</span>
+                        }
+                        else
+                        {
+                            <span>Search Collection</span>
+                        }
+                    </button>
+                    <button @onclick="ClearSearch" class="clear-btn">Clear All</button>
+                </div>
+
+                @if (SearchResults != null && SearchResults.Any())
+                {
+                    <div class="search-results-header">
+                        <div class="results-count">
+                            Found @TotalResults items (showing @((CurrentPage - 1) * PageSize + 1)-@Math.Min(CurrentPage * PageSize, TotalResults))
+                        </div>
+                        <div class="sort-options">
+                            <label for="sortBy">Sort by:</label>
+                            <select value="@SortBy" @onchange="OnSortChanged">
+                                <option value="title">Title</option>
+                                <option value="author">Author</option>
+                                <option value="year">Year</option>
+                                <option value="type">Type</option>
+                            </select>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Scrollable Results Area -->
+        <div class="search-results-scrollable">
+            @if (SearchResults != null && SearchResults.Any())
+            {
+                <div class="search-results-grid">
+                    @foreach (var item in SearchResults)
+                    {
+                        <div class="result-card">
+                            <div class="card-image">
+                                @if (!string.IsNullOrEmpty(item.CoverPhotoLink))
+                                {
+                                    <img src="@item.CoverPhotoLink" alt="Cover of @item.PublicationTitle" class="cover-thumbnail"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                                    <div class="no-cover-fallback" style="display: none;">
+                                        <span>No Cover Available</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="no-cover-placeholder">
+                                        <span>No Cover Available</span>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="card-content">
+                                    <a href="publication/@item.PublicationID" class="card-title">
+                                    @item.PublicationTitle
+                                </a>
+
+                                <div class="card-meta">
+                                    <div class="meta-line">
+                                        <strong>Author:</strong> @(string.Join(", ", item.Authors))
+                                    </div>
+                                    <div class="meta-line">
+                                        <strong>Year:</strong> @item.YearPublished
+                                    </div>
+                                    <div class="meta-line">
+                                        <strong>Type:</strong> @item.MediaTypeName
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(item.Pages))
+                                    {
+                                        <div class="meta-line">
+                                            <strong>Pages:</strong> ~@item.Pages
+                                        </div>
+                                    }
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(item.Comments))
+                                {
+                                    <div class="card-description">
+                                        @(item.Comments.Length > 200 ? item.Comments.Substring(0, 200) + "..." : item.Comments)
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (TotalPages > 1)
+                {
+                    <div class="pagination">
+                        @for (int i = 1; i <= TotalPages; i++)
+                        {
+                            var pageNum = i;
+                            <button type="button"
+                                    class="page-btn @(i == CurrentPage ? "active" : "")"
+                                    @onclick="@(() => GoToPage(pageNum))">
+                                @i
+                            </button>
+                        }
+                    </div>
+                }
+            }
+            else if (HasSearched && (SearchResults == null || !SearchResults.Any()))
+            {
+                <div class="no-results">
+                    <p>No items found matching your search criteria. Please try adjusting your search terms.</p>
+                </div>
+            }
+            else
+            {
+                <div class="search-prompt">
+                    <h3>Ready to Search</h3>
+                    <p>Enter search criteria above and click "Search Collection" to find historical materials in our archive.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Detail Modal -->
+@if (ShowDetailModal && SelectedPublication != null)
+{
+    <div class="modal" @onclick="CloseDetailModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">@SelectedPublication.PublicationTitle</h2>
+                <button class="close-btn" @onclick="CloseDetailModal">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="detail-section">
+                    <h3>Publication Information</h3>
+                    <div class="detail-grid">
+                        <div class="meta-item">
+                            <span class="meta-label">Author(s)</span>
+                            <span class="meta-value">@(string.Join(", ", SelectedPublication.Authors))</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Year Published</span>
+                            <span class="meta-value">@SelectedPublication.YearPublished</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Publisher</span>
+                            <span class="meta-value">@(SelectedPublication.PublisherName ?? "Not specified")</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Material Type</span>
+                            <span class="meta-value">@SelectedPublication.MediaTypeName</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Volume</span>
+                            <span class="meta-value">@SelectedPublication.Volume of @SelectedPublication.NumberOfVolumes</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Pages</span>
+                            <span class="meta-value">@(SelectedPublication.Pages?.ToString() ?? "Not specified")</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">ISBN</span>
+                            <span class="meta-value">@(SelectedPublication.ISBN ?? "Not available")</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Condition</span>
+                            <span class="meta-value">@SelectedPublication.MediaConditionName</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Categories</h3>
+                    <p>@(string.Join(", ", SelectedPublication.Categories))</p>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Description</h3>
+                    <p>@SelectedPublication.Comments</p>
+                </div>
+
+                @if (!string.IsNullOrEmpty(SelectedPublication.ShelfLocation))
+                {
+                    <div class="detail-section">
+                        <h3>Location Information</h3>
+                        <p><strong>Shelf Location:</strong> @SelectedPublication.ShelfLocation</p>
+                        <p><strong>Confidence Level:</strong> @SelectedPublication.ConfidenceLevel%</p>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="action-btn request-btn" @onclick="() => ShowRequestModal(SelectedPublication.PublicationID)">
+                    Request This Item
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Request Modal -->
+@if (ShowRequestModalFlag && RequestPublication != null)
+{
+    <div class="modal" @onclick="CloseRequestModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">Request Historical Material</h2>
+                <button class="close-btn" @onclick="CloseRequestModal">&times;</button>
+            </div>
+            
+            <h3 style="color: #3498db; margin-bottom: 20px;">@RequestPublication.PublicationTitle</h3>
+            
+            <EditForm Model="RequestForm" OnValidSubmit="SubmitRequest">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                
+                <div class="request-form">
+                    <div class="request-type">
+                        <label style="font-weight: bold; color: #2c3e50;">Request Type:</label>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="requestType" checked="@(RequestForm.RequestType == "Borrow")" @onchange="@(() => RequestForm.RequestType = "Borrow")" id="borrowItem" />
+                                <label for="borrowItem">Borrow Physical Item</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="requestType" checked="@(RequestForm.RequestType == "Abstract")" @onchange="@(() => RequestForm.RequestType = "Abstract")" id="viewAbstract" />
+                                <label for="viewAbstract">View/Download Abstract (PDF)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="firstName">First Name *</label>
+                            <InputText @bind-Value="RequestForm.FirstName" id="firstName" />
+                        </div>
+                        <div class="form-field">
+                            <label for="lastName">Last Name *</label>
+                            <InputText @bind-Value="RequestForm.LastName" id="lastName" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="email">Email Address *</label>
+                            <InputText @bind-Value="RequestForm.Email" id="email" type="email" />
+                        </div>
+                        <div class="form-field">
+                            <label for="phone">Phone Number</label>
+                            <InputText @bind-Value="RequestForm.Phone" id="phone" type="tel" />
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="researchPurpose">Research Purpose *</label>
+                        <InputSelect @bind-Value="RequestForm.ResearchPurpose" id="researchPurpose">
+                            <option value="">Select purpose...</option>
+                            <option value="Academic Research">Academic Research</option>
+                            <option value="Genealogical Study">Genealogical Study</option>
+                            <option value="Historical Research">Historical Research</option>
+                            <option value="Personal Interest">Personal Interest</option>
+                            <option value="Educational Project">Educational Project</option>
+                            <option value="Other">Other</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="additionalInfo">Additional Information or Special Requests</label>
+                        <InputTextArea @bind-Value="RequestForm.AdditionalInfo" id="additionalInfo" 
+                                      placeholder="Please provide any additional details about your research or special handling requirements..." />
+                    </div>
+
+                    <div style="text-align: center; margin-top: 25px;">
+                        <button type="submit" class="submit-request-btn" disabled="@IsSubmittingRequest">
+                            @if (IsSubmittingRequest)
+                            {
+                                <span>Submitting...</span>
+                            }
+                            else
+                            {
+                                <span>Submit Request</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    // Same @code section as your original file
+    // Properties for search
+    private PublicationSearchCriteria SearchCriteria = new();
+    private List<PublicationSearchResult>? SearchResults;
+    private List<CreatorDto>? Authors;
+    private List<GenreDto>? Genres;
+    private List<MediaTypeDto>? MediaTypes;
+
+    // Pagination
+    private int CurrentPage = 1;
+    private int PageSize = 10;
+    private int TotalResults = 0;
+    private int TotalPages => (int)Math.Ceiling((double)TotalResults / PageSize);
+
+    // Sorting
+    private string SortBy = "title";
+
+    // UI State
+    private bool IsSearching = false;
+    private bool HasSearched = false;
+
+    // Statistics
+    private int TotalPublications = 0;
+    private int TotalPeriodicals = 0;
+    private int TotalNewspapers = 0;
+    private int TotalAudioRecordings = 0;
+
+    // Modal state
+    private bool ShowDetailModal = false;
+    private bool ShowRequestModalFlag = false;
+    private PublicationDetailDto? SelectedPublication;
+    private PublicationDetailDto? RequestPublication;
+
+    // Request form
+    private PublicationRequestDto RequestForm = new();
+    private bool IsSubmittingRequest = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Console.WriteLine("=== STARTING COLLECTION INITIALIZATION ===");
+            Console.WriteLine("Loading dropdown data...");
+            await LoadDropdownData();
+             Console.WriteLine("✓ Dropdown data loaded successfully");
+            Console.WriteLine("Loading statistics...");    
+            await LoadStatistics();
+            Console.WriteLine("✓ Statistics loaded successfully");
+
+            Console.WriteLine("=== INITIALIZATION COMPLETED ===");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Dropdown error: {ex.Message}");
+            Console.WriteLine($"💥 INITIALIZATION ERROR: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            Console.WriteLine($"Inner exception: {ex.InnerException?.Message}");
+        }
+    }
+
+    private async Task LoadDropdownData()
+    {
+        try
+        {
+            Authors = await PublicationService.GetAuthorsAsync();
+            Genres = await PublicationService.GetGenresAsync();
+            MediaTypes = await PublicationService.GetMediaTypesAsync();
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"Statistics error: {ex.Message}");
+            // Set defaults so page doesn't crash
+            TotalPublications = 0;
+            TotalPeriodicals = 0;
+            TotalAudioRecordings = 0;
+            TotalNewspapers = 0;
+        }
+        try
+        {
+            await LoadStatistics();
+            Console.WriteLine("Statistics loaded successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Statistics error: {ex.Message}");
+            // Set safe defaults
+            TotalPublications = 0;
+            TotalPeriodicals = 0;
+            TotalAudioRecordings = 0;
+            TotalNewspapers = 0;
+        }
+    }
+
+    private async Task LoadStatistics()
+    {
+        var stats = await PublicationService.GetCollectionStatisticsAsync();
+        TotalPublications = stats.TotalBooks;
+        TotalPeriodicals = stats.TotalPeriodicals;
+        TotalAudioRecordings = stats.TotalAudioRecordings;
+        TotalNewspapers = stats.TotalNewspapers;
+    }
+
+    private async Task PerformSearch()
+    {
+        IsSearching = true;
+        HasSearched = true;
+
+        try
+        {
+            var searchRequest = new PublicationSearchRequest
+            {
+                Criteria = SearchCriteria,
+                Page = CurrentPage,
+                PageSize = PageSize,
+                SortBy = SortBy
+            };
+            var response = await PublicationService.SearchPublicationsAsync(searchRequest);
+            SearchResults = response.Results;
+            TotalResults = response.TotalCount;
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+
+    private void ClearSearch()
+    {
+        SearchCriteria = new PublicationSearchCriteria();
+        SearchResults = null;
+        HasSearched = false;
+        CurrentPage = 1;
+        TotalResults = 0;
+    }
+
+    private async Task OnSortChanged(ChangeEventArgs e)
+    {
+        SortBy = e.Value?.ToString() ?? "title";
+        if (HasSearched)
+        {
+            await PerformSearch();
+        }
+    }
+
+    private async Task GoToPage(int page)
+    {
+        CurrentPage = page;
+        await PerformSearch();
+    }
+
+    private async Task ShowItemDetails(int publicationId)
+    {
+        SelectedPublication = await PublicationService.GetPublicationDetailAsync(publicationId);
+        ShowDetailModal = true;
+    }
+
+    private void CloseDetailModal()
+    {
+        ShowDetailModal = false;
+        SelectedPublication = null;
+    }
+
+    private async Task ShowRequestModal(int publicationId)
+    {
+        RequestPublication = await PublicationService.GetPublicationDetailAsync(publicationId);
+        RequestForm = new PublicationRequestDto { PublicationId = publicationId };
+        ShowRequestModalFlag = true;
+        ShowDetailModal = false;
+    }
+
+    private void CloseRequestModal()
+    {
+        ShowRequestModalFlag = false;
+        RequestPublication = null;
+        RequestForm = new PublicationRequestDto();
+    }
+
+    private async Task SubmitRequest()
+    {
+        IsSubmittingRequest = true;
+        
+        try
+        {
+            var result =  await PublicationService.SubmitRequestAsync(RequestForm);
+            
+            var message = RequestForm.RequestType == "Abstract"
+                ? $"Thank you, {RequestForm.FirstName} {RequestForm.LastName}! Your request has been submitted successfully.\n\nWe will email you the PDF abstract within 1-2 business days.\n\nA confirmation email will be sent to {RequestForm.Email}."
+                : $"Thank you, {RequestForm.FirstName} {RequestForm.LastName}! Your request has been submitted successfully.\n\nWe will contact you within 2-3 business days to arrange pickup or viewing of the requested item.\n\nA confirmation email will be sent to {RequestForm.Email}.";
+            
+            await JSRuntime.InvokeVoidAsync("alert", message);
+            CloseRequestModal();
+        }
+        finally
+        {
+            IsSubmittingRequest = false;
+        }
+    }
+}

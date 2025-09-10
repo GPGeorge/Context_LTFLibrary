@@ -1,0 +1,53 @@
+﻿@page "/test"
+@using Microsoft.EntityFrameworkCore
+@using LTF_Library_V1.Data
+@inject ApplicationDbContext DbContext
+
+<h3>Database Connection Test</h3>
+
+@if (isLoading)
+{
+    <p>Testing connection...</p>
+}
+else if (connectionSuccess)
+{
+    <div style="color: green;">
+        <h4>✅ Connection Successful!</h4>
+        <p>Found @publicationCount publications in database</p>
+        <p>Found @authorCount authors in database</p>
+    </div>
+}
+else
+{
+    <div style="color: red;">
+        <h4>❌ Connection Failed</h4>
+        <p>Error: @errorMessage</p>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private bool connectionSuccess = false;
+    private string errorMessage = "";
+    private int publicationCount = 0;
+    private int authorCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            publicationCount = await DbContext.Publications.CountAsync();
+            authorCount = await DbContext.Creators.CountAsync();
+            connectionSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            connectionSuccess = false;
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
