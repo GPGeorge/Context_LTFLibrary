@@ -29,7 +29,12 @@
                class="admin-nav-link @(ActiveTab == "users" ? "active" : "")">
                 User Management
             </a>
-            <a href="/" class="admin-nav-link">Back to Search</a>
+            <button @onclick="@(() => Navigation.NavigateTo("../"))"
+                    class="admin-nav-link"
+                    style="background: none; border: none; cursor: pointer;">
+                Back to Search
+            </button>
+            @* <a href="/" class="admin-nav-link">Back to Search</a> *@
         </div>
     </div>
 
@@ -552,7 +557,8 @@
     private async Task LogoutAsync()
     {
         await UserService.LogoutAsync();
-        Navigation.NavigateTo("/");
+        // Navigation.NavigateTo("/");
+        Navigation.NavigateTo("");
     }
 
     private string GetActionButtonText()
