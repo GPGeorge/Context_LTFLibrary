@@ -1086,6 +1086,7 @@
 {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
     .request-table th,
@@ -1110,25 +1111,39 @@
         background-color: #f8f9fa;
     }
 
+    .request-table th:nth-child(1),
+    .request-table td:nth-child(1),
     .request-table .publication-title
     {
+        width: 25%;
         font-weight: bold;
         color: var(--secondary-color);
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
-    .request-table .requester-name
-    {
-        font-weight: 500;
-    }
 
+    
+.request-table th:nth-child(2),
+.request-table td:nth-child(2),
+.request-table .requester-name
+{
+    width: 10%;
+    font-weight: 500;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.request-table th:nth-child(3),
+.request-table td:nth-child(3)
+{
+    width: 10%;
+}
     .request-table .request-date
     {
         font-size: 0.9em;
         color: var(--text-muted);
+        width: 10%;
     }
 
 /* Status Badges */
@@ -1139,6 +1154,7 @@
     font-size: 0.8em;
     font-weight: bold;
     text-transform: uppercase;
+    width: 10%;
 }
 
 .status-pending
@@ -1146,6 +1162,7 @@
     background-color: #fff3cd;
     color: #856404;
     border: 1px solid #ffeaa7;
+    width: 8%;
 }
 
 .status-approved
@@ -1153,6 +1170,7 @@
     background-color: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
+    width: 8%;
 }
 
 .status-denied
@@ -1160,6 +1178,7 @@
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+    width: 8%;
 }
 
 .status-info-requested
@@ -1168,7 +1187,33 @@
     color: #0c5460;
     border: 1px solid #bee5eb;
 }
+/* Column 4: Purpose */
+.request-table th:nth-child(4),
+.request-table td:nth-child(4)
+{
+    width: 12%;
+}
 
+/* Column 5: Date */
+.request-table th:nth-child(5),
+.request-table td:nth-child(5)
+{
+    width: 12%;
+}
+
+/* Column 6: Days Ago */
+.request-table th:nth-child(6),
+.request-table td:nth-child(6)
+{
+    width: 8%;
+}
+
+/* Column 7: Actions */
+.request-table th:nth-child(7),
+.request-table td:nth-child(7)
+{
+    width: 15%;
+}
 /* Request Actions */
 .request-actions
 {
