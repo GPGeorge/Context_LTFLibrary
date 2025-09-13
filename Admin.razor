@@ -84,9 +84,9 @@
                                 </td>
                                 <td>
                                     <div class="request-actions">
-                                        <button @onclick="@(() => ViewRequest(request))" class="action-btn view-btn">
+                                      @*   <button @onclick="@(() => ViewRequest(request))" class="action-btn view-btn">
                                             View
-                                        </button>
+                                        </button> *@
                                         <button @onclick="@(() => ShowProcessModal(request, "Approve"))" class="action-btn approve-btn">
                                             Approve
                                         </button>
@@ -94,7 +94,7 @@
                                             Deny
                                         </button>
                                         <button @onclick="@(() => ShowProcessModal(request, "RequestInfo"))" class="action-btn info-btn">
-                                            Info
+                                            Request Info
                                         </button>
                                     </div>
                                 </td>
@@ -413,19 +413,19 @@
         await LoadUsers();
     }
 
-    private async Task ViewRequest(PendingRequestDto request)
-    {
-        var details = $"Publication: {request.PublicationTitle}\n\n" +
-                     $"Requester: {request.RequesterName}\n" +
-                     $"Email: {request.Email}\n" +
-                     $"Phone: {request.Phone ?? "Not provided"}\n\n" +
-                     $"Request Type: {request.RequestType}\n" +
-                     $"Research Purpose: {request.ResearchPurpose}\n\n" +
-                     $"Additional Information:\n{request.AdditionalInfo ?? "None provided"}\n\n" +
-                     $"Requested: {request.FormattedRequestDate}";
+    // private async Task ViewRequest(PendingRequestDto request)
+    // {
+    //     var details = $"Publication: {request.PublicationTitle}\n\n" +
+    //                  $"Requester: {request.RequesterName}\n" +
+    //                  $"Email: {request.Email}\n" +
+    //                  $"Phone: {request.Phone ?? "Not provided"}\n\n" +
+    //                  $"Request Type: {request.RequestType}\n" +
+    //                  $"Research Purpose: {request.ResearchPurpose}\n\n" +
+    //                  $"Additional Information:\n{request.AdditionalInfo ?? "None provided"}\n\n" +
+    //                  $"Requested: {request.FormattedRequestDate}";
 
-        await JSRuntime.InvokeVoidAsync("alert", details);
-    }
+    //     await JSRuntime.InvokeVoidAsync("alert", details);
+    // }
 
     private void ShowProcessModal(PendingRequestDto request, string defaultAction)
     {
