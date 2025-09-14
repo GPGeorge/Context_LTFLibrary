@@ -55,6 +55,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = null;           // Disable automatic redirects
     options.LogoutPath = "/LTFCatalog/logout";
     options.AccessDeniedPath = "/LTFCatalog/access-denied";
+    options.Cookie.Path = "/LTFCatalog";
     //options.LoginPath = "/login";  // Fixed path
     //options.LogoutPath = "/logout";
     //options.AccessDeniedPath = "/access-denied";
