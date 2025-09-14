@@ -1,4 +1,4 @@
-﻿@page "/admin"
+@page "/admin"
 @using LTF_Library_V1.DTOs
 @using LTF_Library_V1.Services
 @using Microsoft.AspNetCore.Authorization
@@ -6,6 +6,7 @@
 @inject IUserService UserService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Admin Dashboard - Lander Trail Foundation</PageTitle>
@@ -14,7 +15,14 @@
     <div class="admin-header">
         <h1 class="admin-title">Admin Dashboard</h1>
         <div>
-            <span>Welcome, @CurrentUser?.FullName</span>
+            @if (CurrentUser != null)
+            {
+                <span>Welcome, '@CurrentUser?.FullName' (Debug: '@(CurrentUser.FirstName)' '@(CurrentUser.LastName)' - @CurrentUser.Username)</span>
+            }
+            else
+            {
+                <span style="color: red;">Welcome, [CurrentUser is NULL]</span>
+            }
             <button @onclick="LogoutAsync" class="logout-btn">Logout</button>
         </div>
     </div>
@@ -351,12 +359,29 @@
     {
         try
         {
-            CurrentUser = await UserService.GetCurrentUserAsync();
+            // Get current user using AuthenticationStateProvider instead of UserService
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            Console.WriteLine($"=== ADMIN INITIALIZATION DEBUG ===");
+            Console.WriteLine($"User is authenticated: {authState.User?.Identity?.IsAuthenticated}");
+            Console.WriteLine($"User identity name: '{authState.User?.Identity?.Name}'");
+            Console.WriteLine($"User identity type: {authState.User?.Identity?.GetType().Name}");
+            if (authState.User?.Identity?.IsAuthenticated == true)
+            {
+                var username = authState.User.Identity.Name;
+                if (!string.IsNullOrEmpty(username))
+                {
+                    // Get user details by username instead of using HttpContext
+                    // CurrentUser = await UserService.GetUserByUsernameAsync(username);
+                    CurrentUser = await UserService.GetCurrentUserByClaimsPrincipalAsync(authState.User);
+                }
+            }
+
             await LoadPendingRequests();
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("console.error", $"Error initializing admin dashboard: {ex.Message}");
+            // Can't use JSRuntime here due to prerendering - log to console instead
+            Console.WriteLine($"Error initializing admin dashboard: {ex.Message}");
         }
     }
 
@@ -412,7 +437,7 @@
     {
         await LoadUsers();
     }
-
+    //Temporarily leave viewRequest but don't show it to users at this point. it's redundant because it only duplicates what's on this page already.
     // private async Task ViewRequest(PendingRequestDto request)
     // {
     //     var details = $"Publication: {request.PublicationTitle}\n\n" +
