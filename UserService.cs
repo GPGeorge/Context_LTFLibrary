@@ -1,9 +1,10 @@
-﻿// Services/UserService.cs
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+// Services/UserService.cs
 using LTF_Library_V1.Data.Models;
 using LTF_Library_V1.DTOs;
 using LTF_Library_V1.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace LTF_Library_V1.Services
 {
@@ -164,8 +165,15 @@ namespace LTF_Library_V1.Services
         {
             try
             {
-                var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext?.User);
-                return user != null ? await MapToUserDto(user) : null;
+                // First try the HttpContext approach (works for regular web requests)
+                if (_httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true)
+                {
+                    var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
+                    return user != null ? await MapToUserDto(user) : null;
+                }
+
+                // If HttpContext is null, we can't get the current user this way in Blazor Server
+                return null;
             }
             catch (Exception ex)
             {
@@ -173,7 +181,24 @@ namespace LTF_Library_V1.Services
                 return null;
             }
         }
-
+        // Add this NEW method that's Blazor-Server friendly:
+        public async Task<UserDto?> GetCurrentUserByClaimsPrincipalAsync(ClaimsPrincipal? claimsPrincipal)
+        {
+            try
+            {
+                if (claimsPrincipal?.Identity?.IsAuthenticated == true)
+                {
+                    var user = await _userManager.GetUserAsync(claimsPrincipal);
+                    return user != null ? await MapToUserDto(user) : null;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user by claims principal");
+                return null;
+            }
+        }
         public async Task<UserDto?> GetUserByIdAsync(string userId)
         {
             try
@@ -387,7 +412,7 @@ namespace LTF_Library_V1.Services
                 Email = user.Email ?? string.Empty,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                FullName = user.FullName,
+                FullName = $"{user.FirstName} {user.LastName}".Trim(),
                 CreatedDate = user.CreatedDate,
                 LastLoginDate = user.LastLoginDate,
                 IsActive = user.IsActive,
