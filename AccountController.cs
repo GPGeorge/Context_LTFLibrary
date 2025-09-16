@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using LTF_Library_V1.Data.Models;
+﻿using LTF_Library_V1.Data.Models;
 using LTF_Library_V1.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LTF_Library_V1.Controllers
 {
@@ -21,12 +24,7 @@ namespace LTF_Library_V1.Controllers
             _signInManager = signInManager;
             _logger = logger;
         }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="loginDto"></param>
-        /// <returns></returns>
-        /// 
+       
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
@@ -109,6 +107,25 @@ namespace LTF_Library_V1.Controllers
             return Ok(new
             {
                 success = true
+            });
+        }
+        [HttpGet("whoami")]
+        public IActionResult WhoAmI()
+        {
+            if (User?.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "User is not authenticated"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                username = User.Identity.Name,
+                claims = User.Claims.Select(c => new { c.Type, c.Value })
             });
         }
     }

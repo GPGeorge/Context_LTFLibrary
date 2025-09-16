@@ -1,4 +1,4 @@
-@page "/login"
+﻿@page "/login"
 @using LTF_Library_V1.DTOs
 @using LTF_Library_V1.Services
 @inject IUserService UserService
@@ -194,7 +194,6 @@
     private bool ShowRegisterForm = false;
     private string? ErrorMessage;
     private string? SuccessMessage;
-
     public class LoginResponse
     {
         public bool success
@@ -203,6 +202,7 @@
         }
         public string message { get; set; } = string.Empty;
     }
+    
     private async Task LoginAsync()
     {
         IsLoggingIn = true;
@@ -211,18 +211,15 @@
 
         try
         {
-            // Use full URL since your app runs under /LTFCatalog path
-            var loginUrl = $"{Navigation.BaseUri}LTFCatalog/Account/login";
+            var baseUri = Navigation.BaseUri;
+            var loginUrl = $"{baseUri}Account/login";
 
-            Console.WriteLine($"=== LOGIN ATTEMPT ===");
             Console.WriteLine($"Posting to: {loginUrl}");
-            Console.WriteLine($"Base URI: {Navigation.BaseUri}");
             Console.WriteLine($"LoginModel: Username={LoginModel.Username}, Password length={LoginModel.Password?.Length}, RememberMe={LoginModel.RememberMe}");
 
             var response = await Http.PostAsJsonAsync(loginUrl, LoginModel);
 
             Console.WriteLine($"Response status: {response.StatusCode}");
-
             var responseContent = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"Response content: {responseContent}");
 
@@ -232,21 +229,17 @@
                 if (result?.success == true)
                 {
                     SuccessMessage = "Login successful! Redirecting...";
-                    Console.WriteLine("=== LOGIN SUCCESS - REDIRECTING ===");
-
                     await Task.Delay(1000);
                     Navigation.NavigateTo("admin", forceLoad: true);
                 }
                 else
                 {
                     ErrorMessage = result?.message ?? "Login failed";
-                    Console.WriteLine($"Login result failed: {result?.message}");
                 }
             }
             else
             {
                 ErrorMessage = $"Server error: {response.StatusCode} - {responseContent}";
-                Console.WriteLine($"HTTP Error: {response.StatusCode}");
             }
         }
         catch (Exception ex)
@@ -259,147 +252,6 @@
             IsLoggingIn = false;
         }
     }
-    // private async Task LoginAsync()
-    // {
-    //     IsLoggingIn = true;
-    //     ErrorMessage = null;
-    //     SuccessMessage = null;
-
-    //     try
-    //     {
-    //         // Try just "Account/login" first - HttpClient should use the correct base
-    //         var loginUrl = "Account/login";
-
-    //         Console.WriteLine($"=== LOGIN ATTEMPT ===");
-    //         Console.WriteLine($"Posting to: {loginUrl}");
-    //         Console.WriteLine($"Base URI: {Navigation.BaseUri}");
-    //         Console.WriteLine($"LoginModel: Username={LoginModel.Username}, Password length={LoginModel.Password?.Length}, RememberMe={LoginModel.RememberMe}");
-
-    //         var response = await Http.PostAsJsonAsync(loginUrl, LoginModel);
-
-    //         Console.WriteLine($"Response status: {response.StatusCode}");
-    //         Console.WriteLine($"Response headers: {response.Headers}");
-
-    //         var responseContent = await response.Content.ReadAsStringAsync();
-    //         Console.WriteLine($"Response content: {responseContent}");
-
-    //         if (response.IsSuccessStatusCode)
-    //         {
-    //             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-    //             if (result?.success == true)
-    //             {
-    //                 SuccessMessage = "Login successful! Redirecting...";
-    //                 Console.WriteLine("=== LOGIN SUCCESS - REDIRECTING ===");
-
-    //                 // Add small delay and force reload to ensure cookies are set
-    //                 await Task.Delay(1000);
-    //                 Navigation.NavigateTo("admin", forceLoad: true);
-    //             }
-    //             else
-    //             {
-    //                 ErrorMessage = result?.message ?? "Login failed";
-    //                 Console.WriteLine($"Login result failed: {result?.message}");
-    //             }
-    //         }
-    //         else
-    //         {
-    //             ErrorMessage = $"Server error: {response.StatusCode} - {responseContent}";
-    //             Console.WriteLine($"HTTP Error: {response.StatusCode}");
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Login exception: {ex.Message}");
-    //         Console.WriteLine($"Stack trace: {ex.StackTrace}");
-    //         ErrorMessage = $"Login failed: {ex.Message}";
-    //     }
-    //     finally
-    //     {
-    //         IsLoggingIn = false;
-    //     }
-    // }
-
-    // private async Task LoginAsync()
-    // {
-    //     IsLoggingIn = true;
-    //     ErrorMessage = null;
-    //     SuccessMessage = null;
-
-    //     try
-    //     {
-    //         // Use the UserService.LoginAsync method instead of HTTP call
-    //         var result = await UserService.LoginAsync(LoginModel);
-
-    //         if (result.Success)
-    //         {
-    //             SuccessMessage = "Login successful! Redirecting...";
-    //             await Task.Delay(1000);
-    //             Navigation.NavigateTo("admin", forceLoad: true);
-    //         }
-    //         else
-    //         {
-    //             ErrorMessage = result.Message;
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Login exception: {ex.Message}");
-    //         ErrorMessage = $"Login failed: {ex.Message}";
-    //     }
-    //     finally
-    //     {
-    //         IsLoggingIn = false;
-    //     }
-    // }
-    // private async Task LoginAsync()
-    // {
-    //     IsLoggingIn = true;
-    //     ErrorMessage = null;
-    //     SuccessMessage = null;
-
-    //     try
-    //     {
-    //         var baseUri = Navigation.BaseUri;
-    //         var loginUrl = $"{baseUri}Account/login";
-
-    //         Console.WriteLine($"Posting to: {loginUrl}");
-    //         Console.WriteLine($"LoginModel: Username={LoginModel.Username}, Password length={LoginModel.Password?.Length}, RememberMe={LoginModel.RememberMe}");
-
-    //         var response = await Http.PostAsJsonAsync(loginUrl, LoginModel);
-
-    //         Console.WriteLine($"Response status: {response.StatusCode}");
-    //         var responseContent = await response.Content.ReadAsStringAsync();
-    //         Console.WriteLine($"Response content: {responseContent}");
-
-    //         if (response.IsSuccessStatusCode)
-    //         {
-    //             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-    //             if (result?.success == true)
-    //             {
-    //                 SuccessMessage = "Login successful! Redirecting...";
-    //                 await Task.Delay(1000);
-    //                 Navigation.NavigateTo("admin", forceLoad: true);
-    //             }
-    //             else
-    //             {
-    //                 ErrorMessage = result?.message ?? "Login failed";
-    //             }
-    //         }
-    //         else
-    //         {
-    //             ErrorMessage = $"Server error: {response.StatusCode} - {responseContent}";
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Login exception: {ex.Message}");
-    //         ErrorMessage = $"Login failed: {ex.Message}";
-    //     }
-    //     finally
-    //     {
-    //         IsLoggingIn = false;
-    //     }
-    // }
     private async Task RegisterAsync()
     {
         IsRegistering = true;

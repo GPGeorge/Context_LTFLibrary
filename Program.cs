@@ -1,8 +1,11 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using LTF_Library_V1.Data;
 using LTF_Library_V1.Data.Models;
 using LTF_Library_V1.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,26 +51,35 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>,
+    UserClaimsPrincipalFactory<ApplicationUser, IdentityRole>>();
+// ============================
+// Environment toggle
+// ============================
+bool isLocal = true; // <-- set false when publishing under /LTFCatalog
+
+string basePath = isLocal ? "/" : "/LTFCatalog";
+string loginPath = isLocal ? "/Account/login" : "/LTFCatalog/Account/login";
+string logoutPath = isLocal ? "/Account/logout" : "/LTFCatalog/logout";
+string accessDeniedPath = isLocal ? "/Account/access-denied" : "/LTFCatalog/access-denied";
 
 // Configure Cookie Authentication
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = null;           // Disable automatic redirects
-    options.LogoutPath = "/LTFCatalog/logout";
-    options.AccessDeniedPath = "/LTFCatalog/access-denied";
-    options.Cookie.Path = "/LTFCatalog";
-    //options.LoginPath = "/login";  // Fixed path
-    //options.LogoutPath = "/logout";
-    //options.AccessDeniedPath = "/access-denied";
+    options.Cookie.Path = basePath;
+    options.LoginPath = loginPath;
+    options.LogoutPath = logoutPath;
+    options.AccessDeniedPath = accessDeniedPath;
+
     options.ExpireTimeSpan = TimeSpan.FromDays(30);
     options.SlidingExpiration = true;
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Changed for development
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; 
     options.Cookie.SameSite = SameSiteMode.Lax;
     // Custom redirect logic
     options.Events.OnRedirectToLogin = context =>
     {
-        context.Response.Redirect("/LTFCatalog/login");
+        context.Response.Redirect(loginPath);  
         return Task.CompletedTask;
     };
 });
@@ -91,6 +103,7 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 
@@ -103,7 +116,13 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UsePathBase("/LTFCatalog");
+
+if (!isLocal)
+{
+    // UsePathBase only needed for subsite
+    app.UsePathBase("/LTFCatalog");
+}
+
 app.UseRouting();
 
 // Add Authentication and Authorization middleware (SINGLE occurrence only)

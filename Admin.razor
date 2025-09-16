@@ -1,4 +1,4 @@
-@page "/admin"
+﻿@page "/admin"
 @using LTF_Library_V1.DTOs
 @using LTF_Library_V1.Services
 @using Microsoft.AspNetCore.Authorization
@@ -10,20 +10,39 @@
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Admin Dashboard - Lander Trail Foundation</PageTitle>
-
+<!-- DEBUG SECTION goes directly below PageTitle -->
+<div style="border:1px solid red; padding:8px; margin-bottom:12px;">
+    <strong>[DEBUG Admin.razor]</strong><br />
+    @if (_authState == null)
+    {
+        <p>AuthenticationState: (not yet loaded)</p>
+    }
+    else
+    {
+        <p>Authenticated: @_authState.User.Identity?.IsAuthenticated</p>
+        <p>Username: @_authState.User.Identity?.Name</p>
+        <p>Claims:</p>
+        <ul>
+            @foreach (var claim in _authState.User.Claims)
+            {
+                <li>@claim.Type = @claim.Value</li>
+            }
+        </ul>
+    }
+</div>
 <div class="admin-dashboard">
     <div class="admin-header">
         <h1 class="admin-title">Admin Dashboard</h1>
         <div>
-            @if (CurrentUser != null)
-            {
-                <span>Welcome, '@CurrentUser?.FullName' (Debug: '@(CurrentUser.FirstName)' '@(CurrentUser.LastName)' - @CurrentUser.Username)</span>
-            }
-            else
-            {
-                <span style="color: red;">Welcome, [CurrentUser is NULL]</span>
-            }
-            <button @onclick="LogoutAsync" class="logout-btn">Logout</button>
+                @if (CurrentUser != null)
+                {
+                    <span>Welcome, @CurrentUser.FullName</span>
+                    <button @onclick="LogoutAsync" class="logout-btn">Logout</button>
+                }
+                else
+                {
+                    <span>Loading user info...</span>
+                }
         </div>
     </div>
 
@@ -37,7 +56,10 @@
                class="admin-nav-link @(ActiveTab == "users" ? "active" : "")">
                 User Management
             </a>
+
             <a href="" class="admin-nav-link">Back to Search</a>
+
+            <a href="/" class="admin-nav-link">Back to Search</a>
         </div>
     </div>
 
@@ -355,36 +377,45 @@
     private UserDto? SelectedUser;
     private ProcessRequestDto ProcessRequest = new();
 
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            // Get current user using AuthenticationStateProvider instead of UserService
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            Console.WriteLine($"=== ADMIN INITIALIZATION DEBUG ===");
-            Console.WriteLine($"User is authenticated: {authState.User?.Identity?.IsAuthenticated}");
-            Console.WriteLine($"User identity name: '{authState.User?.Identity?.Name}'");
-            Console.WriteLine($"User identity type: {authState.User?.Identity?.GetType().Name}");
-            if (authState.User?.Identity?.IsAuthenticated == true)
-            {
-                var username = authState.User.Identity.Name;
-                if (!string.IsNullOrEmpty(username))
-                {
-                    // Get user details by username instead of using HttpContext
-                    // CurrentUser = await UserService.GetUserByUsernameAsync(username);
-                    CurrentUser = await UserService.GetCurrentUserByClaimsPrincipalAsync(authState.User);
-                }
-            }
+    //new chatgpt code
 
-            await LoadPendingRequests();
-        }
-        catch (Exception ex)
+    private bool _initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
         {
-            // Can't use JSRuntime here due to prerendering - log to console instead
-            Console.WriteLine($"Error initializing admin dashboard: {ex.Message}");
+            _initialized = true;
+
+            try
+            {
+                //var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                Console.WriteLine($"[DEBUG] Authenticated? {_authState.User?.Identity?.IsAuthenticated}");
+                if (_authState.User?.Identity?.IsAuthenticated == true)
+                {
+                    CurrentUser = await UserService.GetCurrentUserByClaimsPrincipalAsync(_authState.User);
+                    StateHasChanged(); // Force UI refresh after getting the user
+                }
+
+                await LoadPendingRequests();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing admin dashboard: {ex.Message}");
+            }
         }
     }
+    private AuthenticationState? _authState;
+    private bool? _isAuthenticatedDebug = null;
 
+    protected override async Task OnInitializedAsync()
+    {
+        _authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _isAuthenticatedDebug = _authState.User.Identity?.IsAuthenticated;
+
+        Console.WriteLine($"[Admin.razor DEBUG - OnInitializedAsync] Authenticated? {_isAuthenticatedDebug}, Username: {_authState.User.Identity?.Name}");
+    }
+   
     private async Task LoadPendingRequests()
     {
         IsLoading = true;
@@ -577,8 +608,7 @@
     private async Task LogoutAsync()
     {
         await UserService.LogoutAsync();
-        // Navigation.NavigateTo("/");
-        Navigation.NavigateTo("");
+        Navigation.NavigateTo("/");
     }
 
     private string GetActionButtonText()
@@ -591,4 +621,5 @@
             _ => "Process Request"
         };
     }
+
 }

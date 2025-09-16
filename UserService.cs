@@ -1,4 +1,4 @@
-// Services/UserService.cs
+﻿// Services/UserService.cs
 using LTF_Library_V1.Data.Models;
 using LTF_Library_V1.DTOs;
 using LTF_Library_V1.Services;
@@ -165,15 +165,8 @@ namespace LTF_Library_V1.Services
         {
             try
             {
-                // First try the HttpContext approach (works for regular web requests)
-                if (_httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true)
-                {
-                    var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
-                    return user != null ? await MapToUserDto(user) : null;
-                }
-
-                // If HttpContext is null, we can't get the current user this way in Blazor Server
-                return null;
+                var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext?.User);
+                return user != null ? await MapToUserDto(user) : null;
             }
             catch (Exception ex)
             {
@@ -181,7 +174,8 @@ namespace LTF_Library_V1.Services
                 return null;
             }
         }
-        // Add this NEW method that's Blazor-Server friendly:
+                    
+
         public async Task<UserDto?> GetCurrentUserByClaimsPrincipalAsync(ClaimsPrincipal? claimsPrincipal)
         {
             try

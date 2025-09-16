@@ -15,11 +15,19 @@
             <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
                 @if (IsAdmin)
                 {
+
                     <a href="admin" class="admin-link">Admin Dashboard</a>
                 }
                 else if (IsStaff)
                 {
                     <a href="admin" class="admin-link">Staff Dashboard</a>
+
+                    <a href="/admin" class="admin-link">Admin Dashboard</a>
+                }
+                else if (IsStaff)
+                {
+                    <a href="/admin" class="admin-link">Staff Dashboard</a>
+
                 }
                 <button @onclick="LogoutAsync" class="admin-link" style="background: none; border: 1px solid #dc3545; color: #dc3545;">
                     Logout
@@ -31,6 +39,7 @@
 else
 {
     <div style="text-align: center; margin-top: 20px;">
+
         <a href="login" class="admin-link">Staff Login</a>
     </div>
 }
@@ -68,7 +77,6 @@ else
     private async Task LogoutAsync()
     {
         await UserService.LogoutAsync();
-        // Navigation.NavigateTo("/", forceLoad: true);
-        Navigation.NavigateTo("", forceLoad: true);  // Empty string = current subsite root
+        Navigation.NavigateTo("/", forceLoad: true);
     }
 }

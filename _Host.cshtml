@@ -9,14 +9,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="~/" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="css/site.css" />
-    <link rel="stylesheet" href="css/LTF_Library_V1.css" />
+    <link rel="stylesheet" href="~/css/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/LTF_Library_V1.css" />
     <link rel="icon" type="image/jpeg" href="images/LanderTrailLogo.jpg" />
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
 </head>
 <body>
     <component type="typeof(App)" render-mode="ServerPrerendered" />
+    <component type="typeof(Microsoft.AspNetCore.Components.Authorization.CascadingAuthenticationState)" render-mode="ServerPrerendered">
+        <component type="typeof(App)" render-mode="ServerPrerendered" />
+    </component>
     <div id="blazor-error-ui">
         <environment include="Staging,Production">
             An error has occurred. This application may no longer respond until reloaded.
