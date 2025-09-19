@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http.Extensions;
 
+Console.WriteLine("=== PROGRAM.CS STARTING ===");
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -21,6 +23,8 @@ builder.Services.AddServerSideBlazor(options =>
     options.JSInteropDefaultCallTimeout = TimeSpan.FromSeconds(20);
 });
 
+builder.Services.AddMvc().AddSessionStateTempDataProvider();
+builder.Services.AddSession();
 // Add Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -56,17 +60,30 @@ builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>,
 // ============================
 // Environment toggle
 // ============================
-bool isLocal = true; // <-- set false when publishing under /LTFCatalog
+bool isLocal = builder.Environment.IsDevelopment();
 
 string basePath = isLocal ? "/" : "/LTFCatalog";
-string loginPath = isLocal ? "/Account/login" : "/LTFCatalog/Account/login";
-string logoutPath = isLocal ? "/Account/logout" : "/LTFCatalog/logout";
-string accessDeniedPath = isLocal ? "/Account/access-denied" : "/LTFCatalog/access-denied";
+string loginPath = isLocal ? "/login" : "/LTFCatalog/login";
+string logoutPath = isLocal ? "/logout" : "/LTFCatalog/logout";
+string accessDeniedPath = isLocal ? "/access-denied" : "/LTFCatalog/access-denied";
 
-// Configure Cookie Authentication
+//Debugging
+Console.WriteLine($"=== PROGRAM.CS DEBUG ===");
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"IsDevelopment: {builder.Environment.IsDevelopment()}");
+Console.WriteLine($"isLocal: {isLocal}");
+Console.WriteLine($"loginPath: '{loginPath}'");
+Console.WriteLine($"basePath: '{basePath}'");
+Console.WriteLine($"========================");
+
+//// Configure Cookie Authentication
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.Cookie.Path = basePath;
+    //options.Cookie.Path = basePath;
+    if (!isLocal)
+    {
+        options.Cookie.Path = "/LTFCatalog";
+    }
     options.LoginPath = loginPath;
     options.LogoutPath = logoutPath;
     options.AccessDeniedPath = accessDeniedPath;
@@ -79,6 +96,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     // Custom redirect logic
     options.Events.OnRedirectToLogin = context =>
     {
+        Console.WriteLine($"=== REDIRECT TO LOGIN TRIGGERED ===");
+        Console.WriteLine($"Current environment: {builder.Environment.EnvironmentName}");
+        Console.WriteLine($"isLocal value: {isLocal}");
+        Console.WriteLine($"loginPath value: '{loginPath}'");
+        Console.WriteLine($"Redirecting to: '{loginPath}'");
+        Console.WriteLine($"Request URL: {context.Request.GetDisplayUrl()}");
+        Console.WriteLine($"===================================");
         context.Response.Redirect(loginPath);  
         return Task.CompletedTask;
     };
@@ -101,11 +125,13 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOrPublic", policy => policy.RequireRole("Admin", "Public"));
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
+builder.Services.AddSession(); 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -120,11 +146,16 @@ app.UseStaticFiles();
 if (!isLocal)
 {
     // UsePathBase only needed for subsite
+    Console.WriteLine("=== APPLYING PATHBASE /LTFCatalog ===");
     app.UsePathBase("/LTFCatalog");
+}
+else
+{
+    Console.WriteLine("=== NOT APPLYING PATHBASE (localhost) ===");
 }
 
 app.UseRouting();
-
+app.UseSession();
 // Add Authentication and Authorization middleware (SINGLE occurrence only)
 app.UseAuthentication();
 app.UseAuthorization();
@@ -294,7 +325,7 @@ static async Task SeedDataAsync(UserManager<ApplicationUser> userManager, RoleMa
             CreatedDate = DateTime.Now
         };
 
-        var result = await userManager.CreateAsync(adminUser, "X");
+        var result = await userManager.CreateAsync(adminUser, "Admin123!");
 
         if (result.Succeeded)
         {
@@ -323,4 +354,3 @@ app.MapGet("/debug-user", async (UserManager<ApplicationUser> userManager) =>
     return $"User: {user.UserName}, Email: {user.Email}, IsActive: {user.IsActive}, EmailConfirmed: {user.EmailConfirmed}, Roles: {string.Join(",", roles)}";
 });
 app.Run();
-

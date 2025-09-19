@@ -1,9 +1,19 @@
-﻿<CascadingAuthenticationState>
+﻿@inject NavigationManager Navigation
+
+<CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
-                    <p role="alert">You are not authorized to access this resource. Please <a href="/LTFCatalog/login">log in</a>.</p>
+                    @{
+                        var baseUri = Navigation.BaseUri;
+                        var isLocalhost = Navigation.BaseUri.Contains("localhost");
+                        var loginLink = isLocalhost ? "/login" : "/LTFCatalog/login";
+                    }
+                    <p>DEBUG: BaseUri = @baseUri</p>
+                    <p>DEBUG: isLocalhost = @isLocalhost</p>
+                    <p>DEBUG: loginLink = @loginLink</p>
+                    <p role="alert">You are not authorized to access this resource. Please <a href="@loginLink">log in</a>.</p>
                 </NotAuthorized>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
@@ -16,3 +26,6 @@
         </NotFound>
     </Router>
 </CascadingAuthenticationState>
+
+
+ 
