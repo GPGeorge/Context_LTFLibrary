@@ -5,6 +5,8 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @inject HttpClient Http
+ 
+
 <PageTitle>Login - Lander Trail Foundation</PageTitle>
 
 <div class="main-layout">
@@ -48,7 +50,49 @@
             </div>
 
             <div class="advanced-search-form">
-                <EditForm Model="LoginModel" OnValidSubmit="LoginAsync">
+                @{
+                    var isDevelopment = Navigation.BaseUri.Contains("localhost");
+                    var loginFormAction = isDevelopment ? "/Account/loginform" : "/LTFCatalog/Account/loginform";
+                }
+
+                <div class="advanced-search-form">
+                    <!-- Use traditional form post instead of EditForm + HttpClient -->
+                    <form method="post" action="/Account/loginform">
+                        @if (!string.IsNullOrEmpty(ErrorMessage) || !string.IsNullOrEmpty(Error))
+                        {
+                            <div class="validation-errors">
+                                @(ErrorMessage ??  Error)
+                            </div>
+                        }
+
+                        <div class="login-form">
+                            <div class="form-field">
+                                <label for="username">Username:</label>
+                                <input name="Username" id="username" value="@LoginModel.Username"
+                                       class="form-input-search" placeholder="Enter your username" required />
+                            </div>
+
+                            <div class="form-field">
+                                <label for="password">Password:</label>
+                                <input name="Password" id="password" type="password" value="@LoginModel.Password"
+                                       class="form-input-search" placeholder="Enter your password" required />
+                            </div>
+
+                            <div class="remember-me">
+                                <input name="RememberMe" id="rememberMe" type="checkbox" checked="@LoginModel.RememberMe" />
+                                <label for="rememberMe">Remember me</label>
+                            </div>
+
+                            <div class="login-actions">
+                                <button type="submit" class="btn-base btn-primary">
+                                    <span>Login</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+@*                 <EditForm Model="LoginModel" OnValidSubmit="LoginAsync">
                     <DataAnnotationsValidator />
 
                     @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -99,10 +143,11 @@
 
   @*                           <button type="button" @onclick="ShowRegistrationForm" class="btn-base btn-secondary">
                                 Create New Account
-                            </button> *@
-                        </div>
+                            </button>                        </div>
                     </div>
-                </EditForm>
+                </EditForm> *@
+
+              
             </div>
         </div>
 
@@ -194,6 +239,14 @@
     private bool ShowRegisterForm = false;
     private string? ErrorMessage;
     private string? SuccessMessage;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Error
+    {
+        get; set;
+    }
+
     public class LoginResponse
     {
         public bool success
@@ -214,7 +267,10 @@
             var baseUri = Navigation.BaseUri;
             var loginUrl = $"{baseUri}Account/login";
 
+            Console.WriteLine($"=== LOGIN ATTEMPT ===");
             Console.WriteLine($"Posting to: {loginUrl}");
+            Console.WriteLine($"Posting to: {loginUrl}");
+            Console.WriteLine($"Base URI: {baseUri}");
             Console.WriteLine($"LoginModel: Username={LoginModel.Username}, Password length={LoginModel.Password?.Length}, RememberMe={LoginModel.RememberMe}");
 
             var response = await Http.PostAsJsonAsync(loginUrl, LoginModel);
@@ -229,8 +285,10 @@
                 if (result?.success == true)
                 {
                     SuccessMessage = "Login successful! Redirecting...";
+                    Console.WriteLine("=== LOGIN SUCCESS - ABOUT TO REDIRECT ===");
                     await Task.Delay(1000);
                     Navigation.NavigateTo("admin", forceLoad: true);
+                    Console.WriteLine("=== NAVIGATION COMPLETED ===");
                 }
                 else
                 {
