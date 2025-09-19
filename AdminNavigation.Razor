@@ -5,29 +5,25 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 
-@if (IsAuthenticated)
+@if (IsAuthenticated && CurrentUser != null)
 {
     <div class="admin-nav" style="margin-top: 20px;">
         <div style="text-align: center;">
             <p style="margin-bottom: 10px; color: #2c3e50;">
-                Welcome, <strong>@CurrentUser?.FullName</strong>
+                Welcome, <strong>@CurrentUser.FullName</strong>
             </p>
             <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                @{
+                    var isDevelopment = Navigation.BaseUri.Contains("localhost");
+                    var adminPath = isDevelopment ? "/admin" : "/LTFCatalog/admin";
+                }
                 @if (IsAdmin)
                 {
-
-                    <a href="admin" class="admin-link">Admin Dashboard</a>
+                    <a href="@adminPath" class="admin-link">Admin Dashboard</a>
                 }
                 else if (IsStaff)
                 {
-                    <a href="admin" class="admin-link">Staff Dashboard</a>
-
-                    <a href="/admin" class="admin-link">Admin Dashboard</a>
-                }
-                else if (IsStaff)
-                {
-                    <a href="/admin" class="admin-link">Staff Dashboard</a>
-
+                    <a href="@adminPath" class="admin-link">Staff Dashboard</a>
                 }
                 <button @onclick="LogoutAsync" class="admin-link" style="background: none; border: 1px solid #dc3545; color: #dc3545;">
                     Logout
@@ -39,8 +35,11 @@
 else
 {
     <div style="text-align: center; margin-top: 20px;">
-
-        <a href="login" class="admin-link">Staff Login</a>
+        @{
+            var isDevelopment = Navigation.BaseUri.Contains("localhost");
+            var loginPath = isDevelopment ? "/login" : "/LTFCatalog/login";
+        }
+        <a href="@loginPath" class="admin-link">Staff Login</a>
     </div>
 }
 
@@ -52,25 +51,42 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        IsAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
-
-        if (IsAuthenticated)
+        try
         {
-            try
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            IsAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+            Console.WriteLine($"AdminNavigation - IsAuthenticated: {IsAuthenticated}");
+            Console.WriteLine($"AdminNavigation - UserName: '{authState.User.Identity?.Name}'");
+
+            if (IsAuthenticated && !string.IsNullOrEmpty(authState.User.Identity?.Name))
             {
-                CurrentUser = await UserService.GetCurrentUserAsync();
+                // Try to get current user using the more reliable method
+                CurrentUser = await UserService.GetCurrentUserByClaimsPrincipalAsync(authState.User);
+
+                Console.WriteLine($"AdminNavigation - CurrentUser: {( CurrentUser != null ? CurrentUser.FullName : "NULL" )}");
+
                 if (CurrentUser != null)
                 {
                     IsAdmin = CurrentUser.Roles.Contains("Admin");
                     IsStaff = CurrentUser.Roles.Contains("Staff") || IsAdmin;
                 }
+                else
+                {
+                    // If we can't get user details, treat as not authenticated
+                    IsAuthenticated = false;
+                }
             }
-            catch
+            else
             {
-                // If there's an error getting user info, treat as not authenticated
                 IsAuthenticated = false;
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AdminNavigation error: {ex.Message}");
+            IsAuthenticated = false;
+            CurrentUser = null;
         }
     }
 
