@@ -74,6 +74,15 @@ namespace LTF_Library_V1.Controllers
                 {
                     user.LastLoginDate = DateTime.Now;
                     await _userManager.UpdateAsync(user);
+                    Console.WriteLine("Controller: Checking response cookies...");
+                    if (Response.Headers.ContainsKey("Set-Cookie"))
+                    {
+                        Console.WriteLine($"Controller: Set-Cookie headers: {string.Join("; ", Response.Headers["Set-Cookie"])}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Controller: NO Set-Cookie headers found!");
+                    }
 
                     return Ok(new
                     {
@@ -99,7 +108,42 @@ namespace LTF_Library_V1.Controllers
                 });
             }
         }
+        //New code section
+        [HttpPost("loginform")]
+        public async Task<IActionResult> LoginForm([FromForm] LoginDto loginDto)
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(loginDto.Username);
 
+                if (user == null || !user.IsActive)
+                {
+                    return Redirect("/login?error=Invalid username or password");
+                }
+
+                var result = await _signInManager.PasswordSignInAsync(
+                    loginDto.Username,
+                    loginDto.Password,
+                    loginDto.RememberMe,
+                    lockoutOnFailure: false);
+
+                if (result.Succeeded)
+                {
+                    user.LastLoginDate = DateTime.Now;
+                    await _userManager.UpdateAsync(user);
+                    return Redirect("/admin");
+                }
+
+                return Redirect("/login?error=Invalid username or password");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form login error for user {Username}", loginDto.Username);
+                TempData["ErrorMessage"] = "An error occurred during login";
+                return Redirect("/login");
+            }
+        }
+        //end new code section
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
