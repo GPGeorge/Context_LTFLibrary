@@ -5,25 +5,19 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 
-@if (IsAuthenticated && CurrentUser != null)
+@if (IsAuthenticated)
 {
     <div class="admin-nav" style="margin-top: 20px;">
         <div style="text-align: center;">
             <p style="margin-bottom: 10px; color: #2c3e50;">
-                Welcome, <strong>@CurrentUser.FullName</strong>
+                Welcome, <strong>@CurrentUser?.FullName</strong>
             </p>
             <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-                @{
-                    var isDevelopment = Navigation.BaseUri.Contains("localhost");
-                    var adminPath = isDevelopment ? "/admin" : "/LTFCatalog/admin";
-                }
-                @if (IsAdmin)
+                @if (IsAdmin || IsStaff)
                 {
-                    <a href="@adminPath" class="admin-link">Admin Dashboard</a>
-                }
-                else if (IsStaff)
-                {
-                    <a href="@adminPath" class="admin-link">Staff Dashboard</a>
+                    <a href="admin" class="admin-link">
+                        @(IsAdmin ? "Admin Dashboard" : "Staff Dashboard")
+                    </a>
                 }
                 <button @onclick="LogoutAsync" class="admin-link" style="background: none; border: 1px solid #dc3545; color: #dc3545;">
                     Logout
@@ -35,14 +29,9 @@
 else
 {
     <div style="text-align: center; margin-top: 20px;">
-        @{
-            var isDevelopment = Navigation.BaseUri.Contains("localhost");
-            var loginPath = isDevelopment ? "/login" : "/LTFCatalog/login";
-        }
-        <a href="@loginPath" class="admin-link">Staff Login</a>
+        <a href="login" class="admin-link">Staff Login</a>
     </div>
 }
-
 @code {
     private bool IsAuthenticated = false;
     private bool IsAdmin = false;
@@ -56,8 +45,8 @@ else
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             IsAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
 
-            // Console.WriteLine($"AdminNavigation - IsAuthenticated: {IsAuthenticated}");
-            // Console.WriteLine($"AdminNavigation - UserName: '{authState.User.Identity?.Name}'");
+            Console.WriteLine($"AdminNavigation - IsAuthenticated: {IsAuthenticated}");
+            Console.WriteLine($"AdminNavigation - UserName: '{authState.User.Identity?.Name}'");
 
             if (IsAuthenticated && !string.IsNullOrEmpty(authState.User.Identity?.Name))
             {

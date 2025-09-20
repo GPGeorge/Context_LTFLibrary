@@ -57,7 +57,7 @@
 
                 <div class="advanced-search-form">
                    
-                    <EditForm Model="LoginModel" OnValidSubmit="LoginAsync">
+                    <EditForm Model="LoginModel" OnValidSubmit="LoginAsync" OnInvalidSubmit="OnInvalidSubmit">
                         <DataAnnotationsValidator />
 
                         @if (!string.IsNullOrEmpty(ErrorMessage) || !string.IsNullOrEmpty(Error))
@@ -95,7 +95,8 @@
                             </div>
 
                             <div class="login-actions">
-                                <button type="submit" class="btn-base btn-primary" disabled="@IsLoggingIn">
+                                <button type="submit" class="btn-base btn-primary" disabled="@IsLoggingIn"
+                                @onclick="OnLoginButtonClick">
                                     @if (IsLoggingIn)
                                     {
                                         <span>Logging in...</span>
@@ -105,6 +106,10 @@
                                         <span>Login</span>
                                     }
                                 </button>
+                         <button type="button" @onclick="TestButton">Test Blazor</button>
+
+
+
                             </div>
                         </div>
                     </EditForm>
@@ -208,7 +213,31 @@
     {
         get; set;
     }
-
+        private void TestButton()
+    {
+        Console.WriteLine("=== TEST BUTTON CLICKED ===");
+    }
+    // private void CheckFormState()
+    // {
+    //     Console.WriteLine("=== FORM VALIDATION CHECK ===");
+    //     Console.WriteLine($"Username: '{LoginModel.Username}' (length: {LoginModel.Username?.Length ?? 0})");
+    //     Console.WriteLine($"Password: '{new string('*', LoginModel.Password?.Length ?? 0)}'");
+    //     Console.WriteLine($"Username is null or empty: {string.IsNullOrEmpty(LoginModel.Username)}");
+    //     Console.WriteLine($"Password is null or empty: {string.IsNullOrEmpty(LoginModel.Password)}");
+    // }
+  
+    private void OnInvalidSubmit()
+    {
+        Console.WriteLine("=== FORM SUBMISSION INVALID ===");
+        // CheckFormState();
+    }
+    private void OnLoginButtonClick()
+    {
+        Console.WriteLine("=== LOGIN BUTTON CLICKED ===");
+        Console.WriteLine($"Username: '{LoginModel.Username}'");
+        Console.WriteLine($"Password length: {LoginModel.Password?.Length ?? 0}");
+        Console.WriteLine($"IsLoggingIn: {IsLoggingIn}");
+    }
     public class LoginResponse
     {
         public bool success { get; set; }
@@ -217,44 +246,63 @@
         public List<string>? errors { get; set; }
     }
 
-//here
+    // In your Login.razor, replace the LoginAsync method with this:
     private async Task LoginAsync()
     {
+        Console.WriteLine("=== LoginAsync CALLED - METHOD ENTRY ===");
+        Console.WriteLine($"Current time: {DateTime.Now}");
+
         IsLoggingIn = true;
         ErrorMessage = null;
         SuccessMessage = null;
-
+        Console.WriteLine("=== LoginAsync - About to try block ===");
         try
         {
-            Console.WriteLine($"=== BLAZOR LOGIN ATTEMPT ===");
-            Console.WriteLine($"Username: {LoginModel.Username}");
+            var baseUri = Navigation.BaseUri;
+            var loginUrl = $"{baseUri}Account/login";
 
-            // Build absolute URL for the API call
-            var baseUri = Navigation.BaseUri.TrimEnd('/');
-            var loginUrl = $"{baseUri}/api/login";
-            Console.WriteLine($"Posting to: {loginUrl}");
+            // ADD THESE DEBUG LINES
+            Console.WriteLine($"=== LOGIN.RAZOR DEBUG ===");
+            Console.WriteLine($"BaseUri: '{baseUri}'");
+            Console.WriteLine($"LoginUrl: '{loginUrl}'");
+            Console.WriteLine($"Username: '{LoginModel.Username}'");
+            Console.WriteLine($"Password length: {LoginModel.Password?.Length ?? 0}");
+            Console.WriteLine($"RememberMe: {LoginModel.RememberMe}");
+            Console.WriteLine($"About to post to: {loginUrl}");
 
             var response = await Http.PostAsJsonAsync(loginUrl, LoginModel);
-            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-            Console.WriteLine($"Controller response: Success={result?.success}, Message={result?.message}");
+            Console.WriteLine($"Response status: {response.StatusCode}");
+            Console.WriteLine($"Response headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
 
-            if (result?.success == true && !string.IsNullOrEmpty(result.redirectUrl))
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response content: {responseContent}");
+
+            if (response.IsSuccessStatusCode)
             {
-                SuccessMessage = "Login successful! Redirecting...";
-                await Task.Delay(1000);
-
-                Console.WriteLine($"Redirecting to: {result.redirectUrl}");
-                await JSRuntime.InvokeVoidAsync("window.location.assign", result.redirectUrl);
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                if (result?.success == true)
+                {
+                    SuccessMessage = "Login successful! Redirecting...";
+                    var isLocal = Navigation.BaseUri.Contains("localhost");
+                    var adminPath = isLocal ? "/admin" : "/LTFCatalog/admin";
+                    await Task.Delay(3000);// grh reset to 1000 for production
+                    await JSRuntime.InvokeVoidAsync("window.location.replace", adminPath);
+                }
+                else
+                {
+                    ErrorMessage = result?.message ?? "Login failed";
+                }
             }
             else
             {
-                ErrorMessage = result?.message ?? "Login failed";
+                ErrorMessage = $"Server error: {response.StatusCode} - {responseContent}";
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Login exception: {ex.Message}");
+            Console.WriteLine($"Login exception stack: {ex.StackTrace}");
             ErrorMessage = $"Login failed: {ex.Message}";
         }
         finally
@@ -262,8 +310,7 @@
             IsLoggingIn = false;
         }
     }
-
-//tohere
+ 
      private async Task RegisterAsync()
     {
         IsRegistering = true;
