@@ -56,15 +56,15 @@ else
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             IsAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
 
-            Console.WriteLine($"AdminNavigation - IsAuthenticated: {IsAuthenticated}");
-            Console.WriteLine($"AdminNavigation - UserName: '{authState.User.Identity?.Name}'");
+            // Console.WriteLine($"AdminNavigation - IsAuthenticated: {IsAuthenticated}");
+            // Console.WriteLine($"AdminNavigation - UserName: '{authState.User.Identity?.Name}'");
 
             if (IsAuthenticated && !string.IsNullOrEmpty(authState.User.Identity?.Name))
             {
                 // Try to get current user using the more reliable method
                 CurrentUser = await UserService.GetCurrentUserByClaimsPrincipalAsync(authState.User);
 
-                Console.WriteLine($"AdminNavigation - CurrentUser: {( CurrentUser != null ? CurrentUser.FullName : "NULL" )}");
+                // Console.WriteLine($"AdminNavigation - CurrentUser: {( CurrentUser != null ? CurrentUser.FullName : "NULL" )}");
 
                 if (CurrentUser != null)
                 {
@@ -84,7 +84,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"AdminNavigation error: {ex.Message}");
+            // Console.WriteLine($"AdminNavigation error: {ex.Message}");
             IsAuthenticated = false;
             CurrentUser = null;
         }
