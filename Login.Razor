@@ -50,103 +50,65 @@
             </div>
 
             <div class="advanced-search-form">
-                @{
+              @*   @{
                     var isDevelopment = Navigation.BaseUri.Contains("localhost");
                     var loginFormAction = isDevelopment ? "/Account/loginform" : "/LTFCatalog/Account/loginform";
-                }
+                } *@
 
                 <div class="advanced-search-form">
-                    <!-- Use traditional form post instead of EditForm + HttpClient -->
-                    <form method="post" action="/Account/loginform">
+                   
+                    <EditForm Model="LoginModel" OnValidSubmit="LoginAsync">
+                        <DataAnnotationsValidator />
+
                         @if (!string.IsNullOrEmpty(ErrorMessage) || !string.IsNullOrEmpty(Error))
                         {
                             <div class="validation-errors">
-                                @(ErrorMessage ??  Error)
+                                @(ErrorMessage ?? Error)
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(SuccessMessage))
+                        {
+                            <div style="color: #27ae60; margin-bottom: 15px; font-weight: bold;">
+                                @SuccessMessage
                             </div>
                         }
 
                         <div class="login-form">
                             <div class="form-field">
                                 <label for="username">Username:</label>
-                                <input name="Username" id="username" value="@LoginModel.Username"
-                                       class="form-input-search" placeholder="Enter your username" required />
+                                <InputText @bind-Value="LoginModel.Username" id="username"
+                                           class="form-input-search" placeholder="Enter your username" />
+                                <ValidationMessage For="() => LoginModel.Username" />
                             </div>
 
                             <div class="form-field">
                                 <label for="password">Password:</label>
-                                <input name="Password" id="password" type="password" value="@LoginModel.Password"
-                                       class="form-input-search" placeholder="Enter your password" required />
+                                <InputText @bind-Value="LoginModel.Password" id="password"
+                                           type="password" class="form-input-search" placeholder="Enter your password" />
+                                <ValidationMessage For="() => LoginModel.Password" />
                             </div>
 
                             <div class="remember-me">
-                                <input name="RememberMe" id="rememberMe" type="checkbox" checked="@LoginModel.RememberMe" />
+                                <InputCheckbox @bind-Value="LoginModel.RememberMe" id="rememberMe" />
                                 <label for="rememberMe">Remember me</label>
                             </div>
 
                             <div class="login-actions">
-                                <button type="submit" class="btn-base btn-primary">
-                                    <span>Login</span>
+                                <button type="submit" class="btn-base btn-primary" disabled="@IsLoggingIn">
+                                    @if (IsLoggingIn)
+                                    {
+                                        <span>Logging in...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Login</span>
+                                    }
                                 </button>
                             </div>
                         </div>
-                    </form>
+                    </EditForm>
                 </div>
-
-@*                 <EditForm Model="LoginModel" OnValidSubmit="LoginAsync">
-                    <DataAnnotationsValidator />
-
-                    @if (!string.IsNullOrEmpty(ErrorMessage))
-                    {
-                        <div class="validation-errors">
-                            @ErrorMessage
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrEmpty(SuccessMessage))
-                    {
-                        <div style="color: #27ae60; margin-bottom: 15px; font-weight: bold;">
-                            @SuccessMessage
-                        </div>
-                    }
-
-                    <div class="login-form">
-                        <div class="form-field">
-                            <label for="username">Username:</label>
-                            <InputText @bind-Value="LoginModel.Username" id="username"
-                                       class="form-input-search" placeholder="Enter your username" />
-                            <ValidationMessage For="() => LoginModel.Username" />
-                        </div>
-
-                        <div class="form-field">
-                            <label for="password">Password:</label>
-                            <InputText @bind-Value="LoginModel.Password" id="password"
-                                       type="password" class="form-input-search" placeholder="Enter your password" />
-                            <ValidationMessage For="() => LoginModel.Password" />
-                        </div>
-
-                        <div class="remember-me">
-                            <InputCheckbox @bind-Value="LoginModel.RememberMe" id="rememberMe" />
-                            <label for="rememberMe">Remember me</label>
-                        </div>
-
-                        <div class="login-actions">
-                            <button type="submit" class="btn-base btn-primary" disabled="@IsLoggingIn">
-                                @if (IsLoggingIn)
-                                {
-                                    <span>Logging in...</span>
-                                }
-                                else
-                                {
-                                    <span>Login</span>
-                                }
-                            </button>
-
-  @*                           <button type="button" @onclick="ShowRegistrationForm" class="btn-base btn-secondary">
-                                Create New Account
-                            </button>                        </div>
-                    </div>
-                </EditForm> *@
-
               
             </div>
         </div>
@@ -249,13 +211,13 @@
 
     public class LoginResponse
     {
-        public bool success
-        {
-            get; set;
-        }
+        public bool success { get; set; }
         public string message { get; set; } = string.Empty;
+        public string? redirectUrl { get; set; }
+        public List<string>? errors { get; set; }
     }
-    
+
+//here
     private async Task LoginAsync()
     {
         IsLoggingIn = true;
@@ -264,40 +226,30 @@
 
         try
         {
-            var baseUri = Navigation.BaseUri;
-            var loginUrl = $"{baseUri}Account/login";
+            Console.WriteLine($"=== BLAZOR LOGIN ATTEMPT ===");
+            Console.WriteLine($"Username: {LoginModel.Username}");
 
-            Console.WriteLine($"=== LOGIN ATTEMPT ===");
+            // Build absolute URL for the API call
+            var baseUri = Navigation.BaseUri.TrimEnd('/');
+            var loginUrl = $"{baseUri}/api/login";
             Console.WriteLine($"Posting to: {loginUrl}");
-            Console.WriteLine($"Posting to: {loginUrl}");
-            Console.WriteLine($"Base URI: {baseUri}");
-            Console.WriteLine($"LoginModel: Username={LoginModel.Username}, Password length={LoginModel.Password?.Length}, RememberMe={LoginModel.RememberMe}");
 
             var response = await Http.PostAsJsonAsync(loginUrl, LoginModel);
+            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-            Console.WriteLine($"Response status: {response.StatusCode}");
-            var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Response content: {responseContent}");
+            Console.WriteLine($"Controller response: Success={result?.success}, Message={result?.message}");
 
-            if (response.IsSuccessStatusCode)
+            if (result?.success == true && !string.IsNullOrEmpty(result.redirectUrl))
             {
-                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-                if (result?.success == true)
-                {
-                    SuccessMessage = "Login successful! Redirecting...";
-                    Console.WriteLine("=== LOGIN SUCCESS - ABOUT TO REDIRECT ===");
-                    await Task.Delay(1000);
-                    Navigation.NavigateTo("admin", forceLoad: true);
-                    Console.WriteLine("=== NAVIGATION COMPLETED ===");
-                }
-                else
-                {
-                    ErrorMessage = result?.message ?? "Login failed";
-                }
+                SuccessMessage = "Login successful! Redirecting...";
+                await Task.Delay(1000);
+
+                Console.WriteLine($"Redirecting to: {result.redirectUrl}");
+                await JSRuntime.InvokeVoidAsync("window.location.assign", result.redirectUrl);
             }
             else
             {
-                ErrorMessage = $"Server error: {response.StatusCode} - {responseContent}";
+                ErrorMessage = result?.message ?? "Login failed";
             }
         }
         catch (Exception ex)
@@ -310,7 +262,9 @@
             IsLoggingIn = false;
         }
     }
-    private async Task RegisterAsync()
+
+//tohere
+     private async Task RegisterAsync()
     {
         IsRegistering = true;
         ErrorMessage = null;

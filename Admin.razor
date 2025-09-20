@@ -10,26 +10,6 @@
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Admin Dashboard - Lander Trail Foundation</PageTitle>
-<!-- DEBUG SECTION goes directly below PageTitle -->
-<div style="border:1px solid red; padding:8px; margin-bottom:12px;">
-    <strong>[DEBUG Admin.razor]</strong><br />
-    @if (_authState == null)
-    {
-        <p>AuthenticationState: (not yet loaded)</p>
-    }
-    else
-    {
-        <p>Authenticated: @_authState.User.Identity?.IsAuthenticated</p>
-        <p>Username: @_authState.User.Identity?.Name</p>
-        <p>Claims:</p>
-        <ul>
-            @foreach (var claim in _authState.User.Claims)
-            {
-                <li>@claim.Type = @claim.Value</li>
-            }
-        </ul>
-    }
-</div>
 <div class="admin-dashboard">
     <div class="admin-header">
         <h1 class="admin-title">Admin Dashboard</h1>
@@ -357,12 +337,18 @@
     </div>
 }
 
-@code {
+@code 
+{
     // State management
     private string ActiveTab = "requests";
     private bool IsLoading = true;
     private bool IsLoadingUsers = false;
     private bool IsProcessing = false;
+
+    // CRITICAL: Add these fields to prevent multiple initializations
+    private bool _isInitializing = false;
+    private bool _isInitialized = false;
+    private readonly SemaphoreSlim _initSemaphore = new(1, 1);
 
     // Data
     private List<PendingRequestDto>? PendingRequests;
@@ -377,55 +363,69 @@
     private UserDto? SelectedUser;
     private ProcessRequestDto ProcessRequest = new();
 
-    //new chatgpt code
-
-    private bool _initialized = false;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender && !_initialized)
+        // CRITICAL: Prevent multiple simultaneous initializations
+        if (_isInitialized || _isInitializing)
         {
-            _initialized = true;
+            // REMOVED: await JSRuntime.InvokeVoidAsync("console.log", "[DEBUG Admin.razor] Initialization already in progress or completed, skipping");
+            return;
+        }
+
+        await _initSemaphore.WaitAsync();
+        try
+        {
+            if (_isInitialized || _isInitializing)
+            {
+                // REMOVED: await JSRuntime.InvokeVoidAsync("console.log", "[DEBUG Admin.razor] Double-check: Already initialized, skipping");
+                return;
+            }
+
+            _isInitializing = true;
+            // REMOVED: await JSRuntime.InvokeVoidAsync("console.log", "[DEBUG Admin.razor] Starting OnInitializedAsync");
 
             try
             {
-                //var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-                Console.WriteLine($"[DEBUG] Authenticated? {_authState.User?.Identity?.IsAuthenticated}");
-                if (_authState.User?.Identity?.IsAuthenticated == true)
-                {
-                    CurrentUser = await UserService.GetCurrentUserByClaimsPrincipalAsync(_authState.User);
-                    StateHasChanged(); // Force UI refresh after getting the user
-                }
+                // Get current user first
+                CurrentUser = await UserService.GetCurrentUserAsync();
+                // REMOVED: await JSRuntime.InvokeVoidAsync("console.log", $"[DEBUG Admin.razor] Current user loaded: {CurrentUser?.Username}");
 
-                await LoadPendingRequests();
+                // Load pending requests
+                await LoadPendingRequestsSafe();
+
+                _isInitialized = true;
+                // REMOVED: await JSRuntime.InvokeVoidAsync("console.log", "[DEBUG Admin.razor] OnInitializedAsync completed successfully");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error initializing admin dashboard: {ex.Message}");
+                // REMOVED: await JSRuntime.InvokeVoidAsync("console.error", $"[DEBUG Admin.razor] Error in OnInitializedAsync: {ex.Message}");
+                _isInitialized = false; // Reset on error
+                throw;
+            }
+            finally
+            {
+                _isInitializing = false;
             }
         }
+        finally
+        {
+            _initSemaphore.Release();
+        }
     }
-    private AuthenticationState? _authState;
-    private bool? _isAuthenticatedDebug = null;
 
-    protected override async Task OnInitializedAsync()
-    {
-        _authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        _isAuthenticatedDebug = _authState.User.Identity?.IsAuthenticated;
-
-        Console.WriteLine($"[Admin.razor DEBUG - OnInitializedAsync] Authenticated? {_isAuthenticatedDebug}, Username: {_authState.User.Identity?.Name}");
-    }
-   
-    private async Task LoadPendingRequests()
+    private async Task LoadPendingRequestsSafe()
     {
         IsLoading = true;
         try
         {
+            // REMOVED: await JSRuntime.InvokeVoidAsync("console.log", "[DEBUG Admin.razor] Loading pending requests...");
             PendingRequests = await RequestService.GetPendingRequestsAsync();
+            // REMOVED: await JSRuntime.InvokeVoidAsync("console.log", $"[DEBUG Admin.razor] Loaded {PendingRequests?.Count ?? 0} pending requests");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error loading requests: {ex.Message}");
+            // REMOVED: await JSRuntime.InvokeVoidAsync("console.error", $"[DEBUG Admin.razor] Error loading requests: {ex.Message}");
+            PendingRequests = new List<PendingRequestDto>();
         }
         finally
         {
@@ -433,6 +433,17 @@
         }
     }
 
+    private async Task LoadPendingRequests()
+    {
+        await LoadPendingRequestsSafe();
+    }
+
+    // Add IDisposable to clean up the semaphore
+    public void Dispose()
+    {
+        _initSemaphore?.Dispose();
+    }
+  
     private async Task LoadUsers()
     {
         IsLoadingUsers = true;
@@ -449,7 +460,6 @@
             IsLoadingUsers = false;
         }
     }
-
     private async Task SetActiveTab(string tab)
     {
         ActiveTab = tab;
