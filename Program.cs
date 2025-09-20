@@ -22,9 +22,8 @@ builder.Services.AddServerSideBlazor(options =>
     // Chromium-specific timeout adjustments
     options.JSInteropDefaultCallTimeout = TimeSpan.FromSeconds(20);
 });
-
-builder.Services.AddMvc().AddSessionStateTempDataProvider();
-builder.Services.AddSession();
+builder.Services.AddControllersWithViews();
+ builder.Services.AddSession();
 // Add Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -125,10 +124,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOrPublic", policy => policy.RequireRole("Admin", "Public"));
 });
 
-builder.Services.AddControllersWithViews();
-builder.Services.AddSession(); 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<AuthService>();
+ 
 
 var app = builder.Build();
 
@@ -139,13 +137,10 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 if (!isLocal)
 {
-    // UsePathBase only needed for subsite
     Console.WriteLine("=== APPLYING PATHBASE /LTFCatalog ===");
     app.UsePathBase("/LTFCatalog");
 }
