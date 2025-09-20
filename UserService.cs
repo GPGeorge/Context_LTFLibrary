@@ -1,10 +1,11 @@
 ﻿// Services/UserService.cs
 using LTF_Library_V1.Data.Models;
 using LTF_Library_V1.DTOs;
-using LTF_Library_V1.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using LTF_Library_V1.Services;
+
 
 namespace LTF_Library_V1.Services
 {
@@ -34,12 +35,12 @@ namespace LTF_Library_V1.Services
         {
             try
             {
-                Console.WriteLine($"=== LOGIN ATTEMPT: {loginDto.Username} ===");
+                //console.writeLine($"=== LOGIN ATTEMPT: {loginDto.Username} ===");
                 var user = await _userManager.FindByNameAsync(loginDto.Username);
-                Console.WriteLine($"User found: {user != null}");
+                //console.writeLine($"User found: {user != null}");
                 if (user == null)
                 {
-                    Console.WriteLine("User not found");
+                    //console.writeLine("User not found");
                     return new LoginResult
                     {
                         
@@ -47,24 +48,24 @@ namespace LTF_Library_V1.Services
                         Message = "Invalid username or password"
                     };
                 }
-                Console.WriteLine($"User IsActive: {user.IsActive}, EmailConfirmed: {user.EmailConfirmed}");
+                //console.writeLine($"User IsActive: {user.IsActive}, EmailConfirmed: {user.EmailConfirmed}");
 
                 if (!user.IsActive)
                 {
-                    Console.WriteLine("User inactive");
+                    //console.writeLine("User inactive");
                     return new LoginResult
                     {
                         Success = false,
                         Message = "Account is deactivated"
                     };
                 }
-                Console.WriteLine("Attempting password sign in...");
+                //console.writeLine("Attempting password sign in...");
                 var result = await _signInManager.PasswordSignInAsync(
                     loginDto.Username,
                     loginDto.Password,
                     loginDto.RememberMe,
                     lockoutOnFailure: false);
-                Console.WriteLine($"SignIn result: {result.Succeeded}, Locked: {result.IsLockedOut}, RequiresTwoFactor: {result.RequiresTwoFactor}");
+                //console.writeLine($"SignIn result: {result.Succeeded}, Locked: {result.IsLockedOut}, RequiresTwoFactor: {result.RequiresTwoFactor}");
                 if (result.Succeeded)
                 {
                     user.LastLoginDate = DateTime.Now;
@@ -87,9 +88,9 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"=== LOGIN EXCEPTION: {ex.Message} ===");
-                Console.WriteLine($"=== INNER EXCEPTION: {ex.InnerException?.Message} ===");
-                Console.WriteLine($"=== STACK TRACE: {ex.StackTrace} ===");
+                //console.writeLine($"=== LOGIN EXCEPTION: {ex.Message} ===");
+                //console.writeLine($"=== INNER EXCEPTION: {ex.InnerException?.Message} ===");
+                //console.writeLine($"=== STACK TRACE: {ex.StackTrace} ===");
                 _logger.LogError(ex, "Error during login for user {Username}", loginDto.Username);
                 return new LoginResult
                 {
@@ -180,6 +181,12 @@ namespace LTF_Library_V1.Services
         {
             try
             {
+                _logger.LogInformation("[DEBUG UserService] GetCurrentUserByClaimsPrincipalAsync called");
+                if (claimsPrincipal?.Identity?.IsAuthenticated != true)
+                {
+                    _logger.LogWarning("[DEBUG UserService] ClaimsPrincipal is null or not authenticated");
+                    return null;
+                }
                 if (claimsPrincipal?.Identity?.IsAuthenticated == true)
                 {
                     var user = await _userManager.GetUserAsync(claimsPrincipal);
@@ -189,7 +196,7 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting current user by claims principal");
+                _logger.LogError(ex, "[DEBUG UserService] Error getting current user by claims principal");
                 return null;
             }
         }

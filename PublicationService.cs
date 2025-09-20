@@ -14,7 +14,7 @@ namespace LTF_Library_V1.Services
 
         public async Task<PublicationSearchResponse> SearchPublicationsAsync(PublicationSearchRequest request)
         {
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Search started");
+            //console.writeLine($"[{DateTime.Now:HH:mm:ss}] Search started");
             try
             {
                 var query = _context.Publications
@@ -92,7 +92,7 @@ namespace LTF_Library_V1.Services
 
                 _logger.LogInformation($"Returned {results.Count} results");
 
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Search completed successfully");
+                //console.writeLine($"[{DateTime.Now:HH:mm:ss}] Search completed successfully");
 
                 return new PublicationSearchResponse
                 {
@@ -104,7 +104,7 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Search failed: {ex.Message}");
+                //console.writeLine($"[{DateTime.Now:HH:mm:ss}] Search failed: {ex.Message}");
                 _logger.LogError(ex, "Error searching publications");
                 throw;
             }
@@ -284,7 +284,7 @@ namespace LTF_Library_V1.Services
 
         public async Task<PublicationRequestSubmissionDto> SubmitRequestAsync(PublicationRequestDto request)
         {
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Request submission started");
+            //console.writeLine($"[{DateTime.Now:HH:mm:ss}] Request submission started");
             try
             {
                 // In a real implementation, you would:
@@ -297,7 +297,7 @@ namespace LTF_Library_V1.Services
 
                 // For now, just simulate success
                 await Task.Delay(100); // Simulate async operation
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Request submitted successfully");
+                //console.writeLine($"[{DateTime.Now:HH:mm:ss}] Request submitted successfully");
                 return new PublicationRequestSubmissionDto
                 {
                     Success = true,
@@ -307,7 +307,7 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Request submitted successfully");
+                //console.writeLine($"[{DateTime.Now:HH:mm:ss}] Request submitted successfully");
                 _logger.LogError(ex, "Error submitting publication request");
                 return new PublicationRequestSubmissionDto
                 {

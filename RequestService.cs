@@ -54,7 +54,7 @@ namespace LTF_Library_V1.Services
             catch (Exception ex)
             {
                 // Log the error (you might want to use ILogger here)
-                Console.WriteLine($"Error submitting request: {ex.Message}");
+                //console.writeLine($"Error submitting request: {ex.Message}");
                 return false;
             }
         }
@@ -94,7 +94,7 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error getting requests: {ex.Message}");
+                //console.writeLine($"Error getting requests: {ex.Message}");
             }
 
             return requests;
@@ -134,7 +134,7 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error getting request by ID: {ex.Message}");
+                //console.writeLine($"Error getting request by ID: {ex.Message}");
             }
 
             return null;
