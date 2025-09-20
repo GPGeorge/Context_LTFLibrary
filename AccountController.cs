@@ -24,14 +24,14 @@ namespace LTF_Library_V1.Controllers
             _signInManager = signInManager;
             _logger = logger;
         }
-       
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             try
             {
+                Console.WriteLine($"Controller: Received JSON login request for {loginDto?.Username}");
 
-                Console.WriteLine($"Controller: Received login request for {loginDto?.Username}");
                 if (loginDto == null)
                 {
                     Console.WriteLine("Controller: LoginDto is null");
@@ -74,15 +74,7 @@ namespace LTF_Library_V1.Controllers
                 {
                     user.LastLoginDate = DateTime.Now;
                     await _userManager.UpdateAsync(user);
-                    Console.WriteLine("Controller: Checking response cookies...");
-                    if (Response.Headers.ContainsKey("Set-Cookie"))
-                    {
-                        Console.WriteLine($"Controller: Set-Cookie headers: {string.Join("; ", Response.Headers["Set-Cookie"])}");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Controller: NO Set-Cookie headers found!");
-                    }
+                    Console.WriteLine("Controller: JSON login successful");
 
                     return Ok(new
                     {
@@ -99,7 +91,7 @@ namespace LTF_Library_V1.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Controller: Exception = {ex.Message}");
+                Console.WriteLine($"Controller: JSON Login Exception = {ex.Message}");
                 _logger.LogError(ex, "Login error for user {Username}", loginDto.Username);
                 return BadRequest(new
                 {
@@ -108,17 +100,35 @@ namespace LTF_Library_V1.Controllers
                 });
             }
         }
-        //New code section
+
         [HttpPost("loginform")]
         public async Task<IActionResult> LoginForm([FromForm] LoginDto loginDto)
         {
             try
             {
+                // Calculate paths based on environment
+                var isLocal = HttpContext.Request.Host.Host.Contains("localhost");
+                var adminPath = isLocal ? "/admin" : "/LTFCatalog/admin";
+                var loginPath = isLocal ? "/login" : "/LTFCatalog/login";
+
+                Console.WriteLine($"Controller: Received form login request for {loginDto?.Username}");
+                Console.WriteLine($"Controller: isLocal = {isLocal}");
+                Console.WriteLine($"Controller: adminPath = {adminPath}");
+                Console.WriteLine($"Controller: loginPath = {loginPath}");
+
+                if (loginDto == null || string.IsNullOrEmpty(loginDto.Username) || string.IsNullOrEmpty(loginDto.Password))
+                {
+                    Console.WriteLine("Controller: Invalid form data");
+                    return Redirect($"{loginPath}?error=Username and password are required");
+                }
+
                 var user = await _userManager.FindByNameAsync(loginDto.Username);
+                Console.WriteLine($"Controller: User found = {user != null}");
 
                 if (user == null || !user.IsActive)
                 {
-                    return Redirect("/login?error=Invalid username or password");
+                    Console.WriteLine("Controller: User not found or inactive");
+                    return Redirect($"{loginPath}?error=Invalid username or password");
                 }
 
                 var result = await _signInManager.PasswordSignInAsync(
@@ -127,23 +137,33 @@ namespace LTF_Library_V1.Controllers
                     loginDto.RememberMe,
                     lockoutOnFailure: false);
 
+                Console.WriteLine($"Controller: SignIn result = {result.Succeeded}");
+
                 if (result.Succeeded)
                 {
                     user.LastLoginDate = DateTime.Now;
                     await _userManager.UpdateAsync(user);
-                    return Redirect("/admin");
+                    Console.WriteLine($"Controller: Form login successful, redirecting to {adminPath}");
+                    return Redirect(adminPath);
                 }
 
-                return Redirect("/login?error=Invalid username or password");
+                Console.WriteLine("Controller: SignIn failed");
+                return Redirect($"{loginPath}?error=Invalid username or password");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Controller: LoginForm Exception = {ex.Message}");
+                Console.WriteLine($"Controller: LoginForm Stack Trace = {ex.StackTrace}");
                 _logger.LogError(ex, "Form login error for user {Username}", loginDto.Username);
+
+                var isLocal = HttpContext.Request.Host.Host.Contains("localhost");
+                var loginPath = isLocal ? "/login" : "/LTFCatalog/login";
+
                 TempData["ErrorMessage"] = "An error occurred during login";
-                return Redirect("/login");
+                return Redirect(loginPath);
             }
         }
-        //end new code section
+
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -153,6 +173,7 @@ namespace LTF_Library_V1.Controllers
                 success = true
             });
         }
+
         [HttpGet("whoami")]
         public IActionResult WhoAmI()
         {
