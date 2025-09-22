@@ -971,6 +971,7 @@
 .admin-link
 {
     color: var(--primary-color);
+    background-color: white; /*var(--primary-color);*/
     text-decoration: none;
     font-weight: bold;
     padding: 8px 12px;

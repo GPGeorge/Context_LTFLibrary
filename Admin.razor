@@ -17,7 +17,7 @@
         <div>
             @if (CurrentUser != null)
             {
-                <span>Welcome, '@CurrentUser?.FullName' (Debug: '@(CurrentUser.FirstName)' '@(CurrentUser.LastName)' - @CurrentUser.Username)</span>
+                <span>Welcome, '@CurrentUser?.FullName' </span>
             }
             else
             {
@@ -37,19 +37,14 @@
                class="admin-nav-link @(ActiveTab == "users" ? "active" : "")">
                 User Management
             </a>
-            <button @onclick="@(() => Navigation.NavigateTo("../"))"
-                    class="admin-nav-link"
-                    style="background: none; border: none; cursor: pointer;">
-                Back to Search
+            <button @onclick="BackToSearch"
+                class="admin-nav-link"
+                style="background: none; border: none; cursor: pointer;">
+            Back to Search
             </button>
-           @*   <a href="/" class="admin-nav-link">Back to Search</a> 
-                    class="admin-nav-link"
-                    style="background: none; border: none; cursor: pointer;">
-                Back to Search
-            </button> *@
-            @* <a href="/" class="admin-nav-link">Back to Search</a> *@
-        </div>
-    </div>
+         </div>
+     </div>
+    
 
     @if (ActiveTab == "requests")
     {
@@ -364,17 +359,28 @@
     private PendingRequestDto? SelectedRequest;
     private UserDto? SelectedUser;
     private ProcessRequestDto ProcessRequest = new();
-
+    private void BackToSearch()
+    {
+        Navigation.NavigateTo($"{Navigation.BaseUri}collection");
+    }
     protected override async Task OnInitializedAsync()
     {
         try
         {
             // Get current user using AuthenticationStateProvider instead of UserService
+            Console.WriteLine("=== ADMIN PAGE AUTH DEBUG ===");
+           
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             Console.WriteLine($"=== ADMIN INITIALIZATION DEBUG ===");
             Console.WriteLine($"User is authenticated: {authState.User?.Identity?.IsAuthenticated}");
             Console.WriteLine($"User identity name: '{authState.User?.Identity?.Name}'");
             Console.WriteLine($"User identity type: {authState.User?.Identity?.GetType().Name}");
+
+            Console.WriteLine($"Blazor Claims Count: {authState.User.Claims.Count()}");
+            var roles = authState.User.Claims.Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").Select(c => c.Value);
+            Console.WriteLine($"Blazor User Roles: [{string.Join(", ", roles)}]");
+            Console.WriteLine($"Blazor Has Admin Role: {authState.User.IsInRole("Admin")}");
+
             if (authState.User?.Identity?.IsAuthenticated == true)
             {
                 var username = authState.User.Identity.Name;
@@ -586,10 +592,12 @@
 
     private async Task LogoutAsync()
     {
-        await UserService.LogoutAsync();
-        Navigation.NavigateTo("/");
-    }
+        var baseUri = Navigation.BaseUri.TrimEnd('/');
+        var logoutUrl = $"{baseUri}/Account/logout";
+        var homePath = $"{baseUri}/";
 
+        await JSRuntime.InvokeVoidAsync("performLogout", logoutUrl, homePath);
+    }
     private string GetActionButtonText()
     {
         return ProcessRequest.Action switch
@@ -600,4 +608,5 @@
             _ => "Process Request"
         };
     }
+
 }

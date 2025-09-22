@@ -32,8 +32,8 @@ namespace LTF_Library_V1.Controllers
                 if (result.Success)
                 {
                     // Determine redirect URL based on environment
-                    var isProduction = !Request.Host.Value.Contains("localhost");
-                    var adminUrl = isProduction ? "/LTFCatalog/admin" : "/admin";
+                    var isLocal = Request.Host.Value.Contains("localhost");
+                    var adminUrl = isLocal ? "/admin" : "/LTFCatalog/admin" ;
 
                     _logger.LogInformation("Successful login, should redirect to: {AdminUrl}", adminUrl);
 

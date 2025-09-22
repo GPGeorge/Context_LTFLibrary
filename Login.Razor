@@ -6,7 +6,22 @@
 @inject NavigationManager Navigation
 @inject HttpClient Http
  
+@* <div style="background: yellow; border: 2px solid red; padding: 15px; margin: 10px;">
+    <h3>BLAZOR COMPONENT TEST</h3>
+    <p><strong>Current Time:</strong> @DateTime.Now.ToString("HH:mm:ss.fff")</p>
+    <p><strong>Random Number:</strong> @randomNumber</p>
+    <p><strong>Render Count:</strong> @renderCount</p>
+</div> *@
 
+@* @code {
+    private int renderCount = 0;
+
+    protected override void OnInitialized()
+    {
+        renderCount++;
+        Console.WriteLine($"=== Login.razor OnInitialized called {renderCount} times ===");
+    }
+} *@
 <PageTitle>Login - Lander Trail Foundation</PageTitle>
 
 <div class="main-layout">
@@ -50,15 +65,10 @@
             </div>
 
             <div class="advanced-search-form">
-              @*   @{
-                    var isDevelopment = Navigation.BaseUri.Contains("localhost");
-                    var loginFormAction = isDevelopment ? "/Account/loginform" : "/LTFCatalog/Account/loginform";
-                } *@
-
                 <div class="advanced-search-form">
                    
                     <EditForm Model="LoginModel" OnValidSubmit="LoginAsync" OnInvalidSubmit="OnInvalidSubmit">
-                        <DataAnnotationsValidator />
+                      <DataAnnotationsValidator />
 
                         @if (!string.IsNullOrEmpty(ErrorMessage) || !string.IsNullOrEmpty(Error))
                         {
@@ -95,8 +105,7 @@
                             </div>
 
                             <div class="login-actions">
-                                <button type="submit" class="btn-base btn-primary" disabled="@IsLoggingIn"
-                                @onclick="OnLoginButtonClick">
+                                <button type="submit" class="btn-base btn-primary" disabled="@IsLoggingIn">
                                     @if (IsLoggingIn)
                                     {
                                         <span>Logging in...</span>
@@ -106,10 +115,7 @@
                                         <span>Login</span>
                                     }
                                 </button>
-                         <button type="button" @onclick="TestButton">Test Blazor</button>
-
-
-
+                                @* <button type="button" @onclick="TestButtonClick">Test Blazor Button</button> *@
                             </div>
                         </div>
                     </EditForm>
@@ -213,24 +219,55 @@
     {
         get; set;
     }
-        private void TestButton()
+    // Add these methods to your @code section
+
+    private async Task TestFormSubmit()
     {
-        Console.WriteLine("=== TEST BUTTON CLICKED ===");
+        Console.WriteLine("=== TEST FORM SUBMIT CALLED ===");
+        Console.WriteLine($"Username: '{LoginModel.Username}'");
+        Console.WriteLine($"Password length: {LoginModel.Password?.Length ?? 0}");
+
+        // Manually call LoginAsync for testing
+        await LoginAsync();
     }
-    // private void CheckFormState()
-    // {
-    //     Console.WriteLine("=== FORM VALIDATION CHECK ===");
-    //     Console.WriteLine($"Username: '{LoginModel.Username}' (length: {LoginModel.Username?.Length ?? 0})");
-    //     Console.WriteLine($"Password: '{new string('*', LoginModel.Password?.Length ?? 0)}'");
-    //     Console.WriteLine($"Username is null or empty: {string.IsNullOrEmpty(LoginModel.Username)}");
-    //     Console.WriteLine($"Password is null or empty: {string.IsNullOrEmpty(LoginModel.Password)}");
-    // }
-  
+    private void OnUsernameChanged()
+    {
+        Console.WriteLine($"Current time: {DateTime.Now}");
+        Console.WriteLine($"=== USERNAME CHANGED: '{LoginModel.Username}' ===");
+    }
+
+    private void OnPasswordChanged()
+    {
+        Console.WriteLine($"Current time: {DateTime.Now}");
+        Console.WriteLine($"=== PASSWORD CHANGED: Length {LoginModel.Password?.Length ?? 0} ===");
+    }
     private void OnInvalidSubmit()
     {
-        Console.WriteLine("=== FORM SUBMISSION INVALID ===");
-        // CheckFormState();
+        Console.WriteLine("=== FORM INVALID SUBMIT ===");
+        Console.WriteLine($"Username: '{LoginModel.Username}'");
+        Console.WriteLine($"Password: '{LoginModel.Password}'");
+        Console.WriteLine($"Username empty: {string.IsNullOrEmpty(LoginModel.Username)}");
+        Console.WriteLine($"Password empty: {string.IsNullOrEmpty(LoginModel.Password)}");
+        CheckFormState();
     }
+    private int randomNumber = new Random().Next(1000);
+
+
+    private void TestButtonClick()
+    {
+        Console.WriteLine("=== TEST BUTTON CLICKED ===");
+        Console.WriteLine($"Time: {DateTime.Now}");
+    }
+    private void CheckFormState()
+    {
+        Console.WriteLine("=== FORM VALIDATION CHECK ===");
+        Console.WriteLine($"Username: '{LoginModel.Username}' (length: {LoginModel.Username?.Length ?? 0})");
+        Console.WriteLine($"Password: '{new string('*', LoginModel.Password?.Length ?? 0)}'");
+        Console.WriteLine($"Username is null or empty: {string.IsNullOrEmpty(LoginModel.Username)}");
+        Console.WriteLine($"Password is null or empty: {string.IsNullOrEmpty(LoginModel.Password)}");
+    }
+
+
     private void OnLoginButtonClick()
     {
         Console.WriteLine("=== LOGIN BUTTON CLICKED ===");
@@ -255,49 +292,30 @@
         IsLoggingIn = true;
         ErrorMessage = null;
         SuccessMessage = null;
-        Console.WriteLine("=== LoginAsync - About to try block ===");
+
         try
         {
-            var baseUri = Navigation.BaseUri;
-            var loginUrl = $"{baseUri}Account/login";
+            var baseUri = Navigation.BaseUri.TrimEnd('/');
+            var isLocal = baseUri.Contains("localhost");
+            var loginUrl = $"{baseUri}/Account/login"; // Use full baseUri, including /LTFCatalog in production
+            var adminPath = isLocal ? "/admin" : "/LTFCatalog/admin";
 
-            // ADD THESE DEBUG LINES
             Console.WriteLine($"=== LOGIN.RAZOR DEBUG ===");
             Console.WriteLine($"BaseUri: '{baseUri}'");
             Console.WriteLine($"LoginUrl: '{loginUrl}'");
             Console.WriteLine($"Username: '{LoginModel.Username}'");
             Console.WriteLine($"Password length: {LoginModel.Password?.Length ?? 0}");
             Console.WriteLine($"RememberMe: {LoginModel.RememberMe}");
-            Console.WriteLine($"About to post to: {loginUrl}");
+            Console.WriteLine($"About to invoke JS login post");
 
-            var response = await Http.PostAsJsonAsync(loginUrl, LoginModel);
-
-            Console.WriteLine($"Response status: {response.StatusCode}");
-            Console.WriteLine($"Response headers: {string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}"))}");
-
-            var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Response content: {responseContent}");
-
-            if (response.IsSuccessStatusCode)
+            var loginData = new
             {
-                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-                if (result?.success == true)
-                {
-                    SuccessMessage = "Login successful! Redirecting...";
-                    var isLocal = Navigation.BaseUri.Contains("localhost");
-                    var adminPath = isLocal ? "/admin" : "/LTFCatalog/admin";
-                    await Task.Delay(3000);// grh reset to 1000 for production
-                    await JSRuntime.InvokeVoidAsync("window.location.replace", adminPath);
-                }
-                else
-                {
-                    ErrorMessage = result?.message ?? "Login failed";
-                }
-            }
-            else
-            {
-                ErrorMessage = $"Server error: {response.StatusCode} - {responseContent}";
-            }
+                Username = LoginModel.Username,
+                Password = LoginModel.Password,
+                RememberMe = LoginModel.RememberMe
+            };
+
+            await JSRuntime.InvokeVoidAsync("performLogin", loginUrl, loginData, adminPath);
         }
         catch (Exception ex)
         {
@@ -310,7 +328,6 @@
             IsLoggingIn = false;
         }
     }
- 
      private async Task RegisterAsync()
     {
         IsRegistering = true;
