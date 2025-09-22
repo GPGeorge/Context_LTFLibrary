@@ -1,16 +1,14 @@
 using LTF_Library_V1.Data;
 using LTF_Library_V1.Data.Models;
 using LTF_Library_V1.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Http.Extensions;
-
+//X
 Console.WriteLine("=== PROGRAM.CS STARTING ===");
 var builder = WebApplication.CreateBuilder(args);
-
+//X
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor(options =>
@@ -22,8 +20,10 @@ builder.Services.AddServerSideBlazor(options =>
     // Chromium-specific timeout adjustments
     options.JSInteropDefaultCallTimeout = TimeSpan.FromSeconds(20);
 });
+
 builder.Services.AddControllersWithViews();
- builder.Services.AddSession();
+builder.Services.AddSession();
+
 // Add Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -31,23 +31,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Identity Configuration (SINGLE configuration only)
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
-    // Password settings
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 6;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireLowercase = false;
 
-    // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
 
-    // User settings
     options.User.RequireUniqueEmail = true;
     options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
 
-    // Sign in settings
     options.SignIn.RequireConfirmedEmail = false;
     options.SignIn.RequireConfirmedPhoneNumber = false;
 })
@@ -62,10 +58,12 @@ builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>,
 bool isLocal = builder.Environment.IsDevelopment();
 
 string basePath = isLocal ? "/" : "/LTFCatalog";
-string loginPath = isLocal ? "/login" : "/LTFCatalog/login";
-string logoutPath = isLocal ? "/logout" : "/LTFCatalog/logout";
-string accessDeniedPath = isLocal ? "/access-denied" : "/LTFCatalog/access-denied";
-
+string loginPath = "/login";
+string logoutPath =  "/logout";
+string accessDeniedPath = "/access-denied";
+// ============================
+// End environment toggle
+// ============================
 //Debugging
 Console.WriteLine($"=== PROGRAM.CS DEBUG ===");
 Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
@@ -75,37 +73,48 @@ Console.WriteLine($"loginPath: '{loginPath}'");
 Console.WriteLine($"basePath: '{basePath}'");
 Console.WriteLine($"========================");
 
-//// Configure Cookie Authentication
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    //options.Cookie.Path = basePath;
-    if (!isLocal)
-    {
-        options.Cookie.Path = "/LTFCatalog";
-    }
-    options.LoginPath = loginPath;
-    options.LogoutPath = logoutPath;
-    options.AccessDeniedPath = accessDeniedPath;
+// Configure Cookie Authentication
+//builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+//    .AddCookie(options =>
+//    {
+//        options.Cookie.Name = "LTFCatalog.Auth";
+     
+//        options.LoginPath = loginPath;
+//        options.LogoutPath = logoutPath;
+//        options.AccessDeniedPath = accessDeniedPath;
+//        options.Cookie.HttpOnly = true;
 
-    options.ExpireTimeSpan = TimeSpan.FromDays(30);
-    options.SlidingExpiration = true;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; 
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    // Custom redirect logic
-    options.Events.OnRedirectToLogin = context =>
-    {
-        Console.WriteLine($"=== REDIRECT TO LOGIN TRIGGERED ===");
-        Console.WriteLine($"Current environment: {builder.Environment.EnvironmentName}");
-        Console.WriteLine($"isLocal value: {isLocal}");
-        Console.WriteLine($"loginPath value: '{loginPath}'");
-        Console.WriteLine($"Redirecting to: '{loginPath}'");
-        Console.WriteLine($"Request URL: {context.Request.GetDisplayUrl()}");
-        Console.WriteLine($"===================================");
-        context.Response.Redirect(loginPath);  
-        return Task.CompletedTask;
-    };
-});
+//        // This adapts automatically:
+//        // - On localhost (HTTP): allows non-secure cookies
+//        // - On production (HTTPS): marks cookie as Secure
+//        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+//        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+//        options.SlidingExpiration = true;
+
+
+//        // Safe default that works in both cases
+//        // - Localhost: accepted by Chrome/Edge/Brave
+//        // - Production: behaves like normal auth cookies
+//        options.Cookie.SecurePolicy = isLocal
+//        ? CookieSecurePolicy.None       // allow HTTP on localhost
+//        : CookieSecurePolicy.Always;    // require HTTPS in production
+//        options.Cookie.SameSite = isLocal
+//            ? SameSiteMode.Lax               // relaxed on localhost
+//            : SameSiteMode.Lax;              // standard in production
+//                                             // Optional: custom redirect logging
+//        options.Events.OnRedirectToLogin = context =>
+//        {
+//            Console.WriteLine($"Redirect to login: {context.RedirectUri}");
+//            context.Response.Redirect(context.RedirectUri);
+//            return Task.CompletedTask;
+//        };
+
+
+//    });
+
+
+
+
 
 // Register your custom services
 builder.Services.AddScoped<IPublicationService, PublicationService>();
@@ -150,8 +159,6 @@ else
 }
 
 app.UseRouting();
-app.UseSession();
-// Add Authentication and Authorization middleware (SINGLE occurrence only)
 app.UseAuthentication();
 app.UseAuthorization();
 
