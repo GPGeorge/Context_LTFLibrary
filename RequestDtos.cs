@@ -30,8 +30,11 @@ namespace LTF_Library_V1.DTOs
         
         [Required]
         public string Action { get; set; } = string.Empty; // "Approve", "Deny", "RequestInfo"
-        
-        public string? AdminNotes { get; set; }
+
+        public string? AdminNotes
+        {
+            get; set;
+        }
         
         [Required]
         public string ProcessedBy { get; set; } = string.Empty;

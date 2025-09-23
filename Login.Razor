@@ -115,7 +115,6 @@
                                         <span>Login</span>
                                     }
                                 </button>
-                                @* <button type="button" @onclick="TestButtonClick">Test Blazor Button</button> *@
                             </div>
                         </div>
                     </EditForm>
@@ -219,17 +218,16 @@
     {
         get; set;
     }
-    // Add these methods to your @code section
+  
+    // private async Task TestFormSubmit()
+    // {
+    //     Console.WriteLine("=== TEST FORM SUBMIT CALLED ===");
+    //     Console.WriteLine($"Username: '{LoginModel.Username}'");
+    //     Console.WriteLine($"Password length: {LoginModel.Password?.Length ?? 0}");
 
-    private async Task TestFormSubmit()
-    {
-        Console.WriteLine("=== TEST FORM SUBMIT CALLED ===");
-        Console.WriteLine($"Username: '{LoginModel.Username}'");
-        Console.WriteLine($"Password length: {LoginModel.Password?.Length ?? 0}");
-
-        // Manually call LoginAsync for testing
-        await LoginAsync();
-    }
+    //     // Manually call LoginAsync for testing
+    //     await LoginAsync();
+    // }
     private void OnUsernameChanged()
     {
         Console.WriteLine($"Current time: {DateTime.Now}");
@@ -253,11 +251,11 @@
     private int randomNumber = new Random().Next(1000);
 
 
-    private void TestButtonClick()
-    {
-        Console.WriteLine("=== TEST BUTTON CLICKED ===");
-        Console.WriteLine($"Time: {DateTime.Now}");
-    }
+    // private void TestButtonClick()
+    // {
+    //     Console.WriteLine("=== TEST BUTTON CLICKED ===");
+    //     Console.WriteLine($"Time: {DateTime.Now}");
+    // }
     private void CheckFormState()
     {
         Console.WriteLine("=== FORM VALIDATION CHECK ===");
@@ -268,13 +266,13 @@
     }
 
 
-    private void OnLoginButtonClick()
-    {
-        Console.WriteLine("=== LOGIN BUTTON CLICKED ===");
-        Console.WriteLine($"Username: '{LoginModel.Username}'");
-        Console.WriteLine($"Password length: {LoginModel.Password?.Length ?? 0}");
-        Console.WriteLine($"IsLoggingIn: {IsLoggingIn}");
-    }
+    // private void OnLoginButtonClick()
+    // {
+    //     Console.WriteLine("=== LOGIN BUTTON CLICKED ===");
+    //     Console.WriteLine($"Username: '{LoginModel.Username}'");
+    //     Console.WriteLine($"Password length: {LoginModel.Password?.Length ?? 0}");
+    //     Console.WriteLine($"IsLoggingIn: {IsLoggingIn}");
+    // }
     public class LoginResponse
     {
         public bool success { get; set; }

@@ -1129,7 +1129,7 @@
 .request-table td:nth-child(2),
 .request-table .requester-name
 {
-    width: 10%;
+    width: 8%;
     font-weight: 500;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -1138,7 +1138,7 @@
 .request-table th:nth-child(3),
 .request-table td:nth-child(3)
 {
-    width: 10%;
+    width: 12%;
 }
     .request-table .request-date
     {
