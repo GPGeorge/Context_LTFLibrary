@@ -30,6 +30,10 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.server.js"></script>
-    <script src="/LTFCatalog/js/auth.js"></script>
+    @{
+        var isLocal = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+        var authScriptPath = isLocal ? "/js/auth.js" : "/LTFCatalog/js/auth.js";
+    }
+    <script src="@authScriptPath"></script>
 </body>
 </html>
