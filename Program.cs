@@ -326,8 +326,8 @@ static async Task SeedDataAsync(UserManager<ApplicationUser> userManager, RoleMa
             IsActive = true,
             CreatedDate = DateTime.Now
         };
-
-        var result = await userManager.CreateAsync(adminUser, "Admin123!");
+        //User Password sanitized for Public repo
+        var result = await userManager.CreateAsync(adminUser, "XXXXXX!");
 
         if (result.Succeeded)
         {
@@ -356,3 +356,4 @@ app.MapGet("/debug-user", async (UserManager<ApplicationUser> userManager) =>
     return $"User: {user.UserName}, Email: {user.Email}, IsActive: {user.IsActive}, EmailConfirmed: {user.EmailConfirmed}, Roles: {string.Join(",", roles)}";
 });
 app.Run();
+
