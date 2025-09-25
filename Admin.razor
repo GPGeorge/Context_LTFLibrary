@@ -45,6 +45,12 @@
                class="admin-nav-link @(ActiveTab == "users" ? "active" : "")">
                 User Management
             </a>
+            @* //new function Edit Books *@
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTab("editPubs"))"
+               class="admin-nav-link @(ActiveTab == "editPubs" ? "active" : "")">
+                Edit Publication Details
+            </a>
+         @*    //End new function Edit Books *@
             <button @onclick="BackToSearch"
                 class="admin-nav-link"
                 style="background: none; border: none; cursor: pointer;">
@@ -255,18 +261,18 @@
         }
     }
 
-    @* @if (ActiveTab == "users")
+    @if (ActiveTab == "editPubs")
     {
         <div class="request-queue">
             <div class="request-queue-header">
-                <h3>User Management</h3>
+                <h3>Edit Publications</h3>
                 <button @onclick="RefreshUsers" class="btn-base btn-secondary">Refresh</button>
             </div>
 
             @if (IsLoadingUsers)
             {
                 <div style="padding: 40px; text-align: center;">
-                    <p>Loading users...</p>
+                    <p>Loading pubs...</p>
                 </div>
             }
             else if (Users?.Any() == true)
@@ -337,7 +343,7 @@
                 </div>
             }
         </div>
-    } *@
+    }
 </div>
 
 <!-- Request Processing Modal -->

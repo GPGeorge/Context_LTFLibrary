@@ -85,11 +85,11 @@
                     <div class="search-field">
                         <label for="titleSearch">Title:</label>
                         <input type="text" @bind="SearchCriteria.Title" @bind:event="oninput"
-                               placeholder="Enter book or publication title..." />
+                               placeholder="Enter book or publication title..." id="titleSearch" />
                     </div>
                     <div class="search-field">
                         <label for="authorSearch">Author:</label>
-                        <select @bind="SearchCriteria.CreatorId">
+                        <select @bind="SearchCriteria.CreatorId" id="authorSearch">
                             <option value="">All Authors</option>
                             @if (Authors != null)
                             {
@@ -98,6 +98,7 @@
                                     <option value="@author.CreatorID">@author.FullName</option>
                                 }
                             }
+                      
                         </select>
                     </div>
                 </div>
@@ -105,7 +106,7 @@
                 <div class="search-row">
                     <div class="search-field">
                         <label for="categorySearch">Category:</label>
-                        <select @bind="SearchCriteria.GenreId">
+                        <select @bind="SearchCriteria.GenreId" id="categorySearch">
                             <option value="">All Categories</option>
                             @if (Genres != null)
                             {
@@ -118,7 +119,7 @@
                     </div>
                     <div class="search-field">
                         <label for="mediaTypeSearch">Material Type:</label>
-                        <select @bind="SearchCriteria.MediaTypeId">
+                        <select @bind="SearchCriteria.MediaTypeId" id="mediaTypeSearch">
                             <option value="">All Types</option>
                             @if (MediaTypes != null)
                             {
