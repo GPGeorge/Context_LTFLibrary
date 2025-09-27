@@ -82,6 +82,8 @@
                             <th>Publication</th>
                             <th>Requester</th>
                             <th>Type</th>
+                            @* new *@
+                            <th>Status</th>
                             <th>Purpose</th>
                             <th>Date</th>
                             <th>Days Ago</th>
@@ -100,9 +102,13 @@
                                     <div style="font-size: 0.8em; color: #666;">@request.Email</div>
                                 </td>
                                 <td>
-                                    <span class="status-badge status-pending">@request.RequestType</span>
+                                    <span class="status-badge request-type">@request.RequestType</span>
                                 </td>
-                                <td>@request.ResearchPurpose</td>
+                                <td>
+                                    <span class="status-badge status-pending">@request.Status</span>
+                                </td>
+
+                                <td><span class="status-badge request-purpose">@request.ResearchPurpose</span></td>
                                 <td class="request-date">@request.FormattedRequestDate</td>
                                 <td>
                                     <span class="@(request.DaysAgo > 7 ? "text-danger" : request.DaysAgo > 3 ? "text-warning" : "")">
@@ -266,10 +272,10 @@
         <div class="request-queue">
             <div class="request-queue-header">
                 <h3>Edit Publications</h3>
-                <button @onclick="RefreshUsers" class="btn-base btn-secondary">Refresh</button>
+                <button @onclick="RefreshUsers" class="btn-base btn-secondary">Refresh</button> @* Change here from RefreshUsers to EditPub *@
             </div>
-
-            @if (IsLoadingUsers)
+            @* Replace here *@
+         @*    @if (IsLoadingUsers)
             {
                 <div style="padding: 40px; text-align: center;">
                     <p>Loading pubs...</p>
@@ -341,8 +347,8 @@
                 <div style="padding: 40px; text-align: center; color: #666;">
                     <p>No users found.</p>
                 </div>
-            }
-        </div>
+            }*@
+        </div> 
     }
 </div>
 
@@ -507,7 +513,7 @@
         {
             // Get current user using AuthenticationStateProvider instead of UserService
             Console.WriteLine("=== ADMIN PAGE AUTH DEBUG ===");
-           
+
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             User = authState.User;
             Console.WriteLine($"=== ADMIN INITIALIZATION DEBUG ===");
@@ -587,7 +593,14 @@
     {
         await LoadPendingRequests();
     }
+    private async Task EditPub() /* New Task for new EditPub function */
+    {
+        
+    }
+    private async Task RefreshPub() /* New Task for new EditPub function */
+    {
 
+    }
     private async Task RefreshUsers()
     {
         await LoadUsers();
@@ -669,7 +682,7 @@
         {
             RequestID = request.RequestID,
             Action = defaultAction,
-            ProcessedBy = CurrentUser?.Username ?? "Admin"
+            ProcessedBy = CurrentUser?.Id ?? "Admin"
         };
         ShowProcessingModal = true;
     }
