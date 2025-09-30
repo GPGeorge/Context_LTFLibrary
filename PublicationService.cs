@@ -1,9 +1,9 @@
 ﻿using LTF_Library_V1.Data;
-using LTF_Library_V1.Data.Models;
 using LTF_Library_V1.DTOs;
-using LTF_Library_V1.Services;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
 
 namespace LTF_Library_V1.Services
 {
@@ -281,6 +281,184 @@ namespace LTF_Library_V1.Services
                 throw;
             }
         }
+        public async Task<List<string>> GetAllKeywordsAsync()
+        {
+            try
+            {
+                return await _context.PublicationKeyWords
+                    .Where(pk => !string.IsNullOrEmpty(pk.KeyWord))
+                    .Select(pk => pk.KeyWord!)
+                    .Distinct()
+                    .OrderBy(k => k)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving keywords");
+                throw;
+            }
+        }
+        public async Task<PublicationEditDto?> GetPublicationForEditAsync(int publicationId)
+        {
+            try
+            {
+                var publication = await _context.Publications
+                    .Include(p => p.Publisher)
+                    .Include(p => p.MediaType)
+                    .Include(p => p.MediaCondition)
+                    .Include(p => p.Shelf)
+                        .ThenInclude(s => s!.Bookcase)
+                    .Include(p => p.PublicationCreators)
+                        .ThenInclude(pc => pc.Creator)
+                    .Include(p => p.PublicationGenres)
+                        .ThenInclude(pg => pg.Genre)
+                    .Include(p => p.PublicationKeyWords)
+                    .FirstOrDefaultAsync(p => p.PublicationID == publicationId);
+
+                if (publication == null)
+                    return null;
+
+                return new PublicationEditDto
+                {
+                    PublicationID = publication.PublicationID,
+                    PublicationTitle = publication.PublicationTitle,
+                    CatalogNumber = publication.CatalogNumber,
+                    Comments = publication.Comments,
+                    CoverPhotoLink = publication.CoverPhotoLink,
+                    Edition = publication.Edition,
+                    ISBN = publication.ISBN,
+                    Volume = publication.Volume,
+                    NumberOfVolumes = publication.NumberOfVolumes,
+                    Pages = publication.Pages,
+                    YearPublished = publication.YearPublished,
+                    ConfidenceLevel = publication.ConfidenceLevel,
+                    ListPrice = publication.ListPrice,
+                    PublisherID = publication.PublisherID,
+                    MediaTypeID = publication.MediaTypeID,
+                    MediaConditionID = publication.MediaConditionID,
+                    ShelfID = publication.ShelfID,
+                    SelectedAuthors = publication.PublicationCreators
+                        .Where(pc => pc.Creator != null)
+                        .Select(pc => new CreatorDto
+                        {
+                            CreatorID = pc.Creator!.CreatorID,
+                            CreatorFirstName = pc.Creator.CreatorFirstName,
+                            CreatorMiddleName = pc.Creator.CreatorMiddleName,
+                            CreatorLastName = pc.Creator.CreatorLastName,
+                            FullName = pc.Creator.FullName,
+                            SortName = pc.Creator.SortName
+                        }).ToList(),
+                    SelectedCategories = publication.PublicationGenres
+                        .Where(pg => pg.Genre != null)
+                        .Select(pg => new GenreDto
+                        {
+                            GenreID = pg.Genre!.GenreID,
+                            Genre = pg.Genre.Genre1 ?? "",
+                            SortOrder = pg.Genre.SortOrder
+                        }).ToList(),
+                    Keywords = publication.PublicationKeyWords
+                        .Where(pk => !string.IsNullOrEmpty(pk.KeyWord))
+                        .Select(pk => pk.KeyWord!)
+                        .ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving publication for edit {PublicationId}", publicationId);
+                throw;
+            }
+        }
+        public async Task<List<string>> GetKeywordsForPublicationAsync(int publicationId)
+        {
+            try
+            {
+                return await _context.PublicationKeyWords
+                    .Where(pk => pk.PublicationID == publicationId && !string.IsNullOrEmpty(pk.KeyWord))
+                    .Select(pk => pk.KeyWord!)
+                    .OrderBy(k => k)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving keywords for publication {PublicationId}", publicationId);
+                throw;
+            }
+        }
+        public async Task<ServiceResult> UpdatePublicationAsync(PublicationEditDto publicationDto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var publication = await _context.Publications
+                    .Include(p => p.PublicationCreators)
+                    .Include(p => p.PublicationGenres)
+                    .Include(p => p.PublicationKeyWords)
+                    .FirstOrDefaultAsync(p => p.PublicationID == publicationDto.PublicationID);
+
+                if (publication == null)
+                {
+                    return ServiceResult.Failed("Publication not found.");
+                }
+
+                // Update basic publication properties with scalar values
+                publication.PublicationTitle = publicationDto.PublicationTitle;
+                publication.CatalogNumber = publicationDto.CatalogNumber;
+                publication.Comments = publicationDto.Comments;
+                publication.CoverPhotoLink = publicationDto.CoverPhotoLink;
+                publication.Edition = publicationDto.Edition;
+                publication.ISBN = publicationDto.ISBN;
+                publication.Volume = publicationDto.Volume;
+                publication.NumberOfVolumes = publicationDto.NumberOfVolumes;
+                publication.Pages = publicationDto.Pages;
+                publication.YearPublished = publicationDto.YearPublished;
+                publication.ConfidenceLevel = publicationDto.ConfidenceLevel;
+                publication.ListPrice = publicationDto.ListPrice;
+                publication.PublisherID = publicationDto.PublisherID;
+                publication.MediaTypeID = publicationDto.MediaTypeID;
+                publication.MediaConditionID = publicationDto.MediaConditionID;
+                publication.ShelfID = publicationDto.ShelfID;
+
+                await _context.SaveChangesAsync();
+
+                // Update Authors - Remove existing and add new
+
+                var authorIds = string.Join(",", publicationDto.SelectedAuthors.Select(a => a.CreatorID));
+
+                await _context.Database.ExecuteSqlRawAsync(
+                    "EXEC sp_UpdatePublicationAuthors @PublicationID, @AuthorIDs",
+                    new SqlParameter("@PublicationID", publication.PublicationID),
+                    new SqlParameter("@AuthorIDs", authorIds));
+
+                // Update Categories - Remove existing and add new
+
+                var categoryIDs = string.Join(",", publicationDto.SelectedCategories.Select(a => a.GenreID));
+
+                await _context.Database.ExecuteSqlRawAsync(
+                    "EXEC sp_UpdatePublicationCategories @PublicationID, @categoryIDs",
+                    new SqlParameter("@PublicationID", publication.PublicationID),
+                    new SqlParameter("@categoryIDs", categoryIDs));
+
+                // Update Keywords - Remove existing and add new
+
+                var keywordJson = JsonSerializer.Serialize(publicationDto.Keywords.Where(k => !string.IsNullOrWhiteSpace(k)));
+
+                await _context.Database.ExecuteSqlRawAsync("EXEC sp_UpdatePublicationKeywords @PublicationID, @Keywords",
+                      new SqlParameter("@PublicationID", publication.PublicationID),
+                      new SqlParameter("@Keywords", keywordJson));
+
+                //await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return ServiceResult.Successful("Publication updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error updating publication {PublicationId}", publicationDto.PublicationID);
+                return ServiceResult.Failed("An error occurred while updating the publication.");
+            }
+        }
+       
 
         public async Task<PublicationRequestSubmissionDto> SubmitRequestAsync(PublicationRequestDto request)
         {

@@ -11,5 +11,9 @@ namespace LTF_Library_V1.Services
         Task<List<MediaTypeDto>> GetMediaTypesAsync();
         Task<CollectionStatisticsDto> GetCollectionStatisticsAsync();
         Task<PublicationRequestSubmissionDto> SubmitRequestAsync(PublicationRequestDto request);
+        Task<PublicationEditDto?> GetPublicationForEditAsync(int publicationId);
+        Task<ServiceResult> UpdatePublicationAsync(PublicationEditDto publication);
+        Task<List<string>> GetAllKeywordsAsync();
+        Task<List<string>> GetKeywordsForPublicationAsync(int publicationId);
     }
 }
