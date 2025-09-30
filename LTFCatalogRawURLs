@@ -1,19 +1,26 @@
-*Last updated 09/23/2025 06:56:00
+*Last updated 09/30/2025 05:19:00
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/AccountController.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Admin.razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/AdminNavigation.Razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/App.razor
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/ApplicationDbContext.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/ApplicationUser.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/AuthService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Collection.razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/DatabaseTest.razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Error.cshtml
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Error.cshtml.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/ICreatorService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IGenreService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IPublicationService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IPublisherService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IRequestManagementService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IRequestService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IUserService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/KeywordManagementModal.razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/LTF_Library_V1.css
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Login.Razor
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/LoginController.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/MainLayout.razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/MainLayout.razor.css
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/NavMenu.razor
@@ -24,9 +31,17 @@ https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Pu
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationDetail.cshtml.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationDetail.razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationDtos.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationEdit.razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationRequest.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationSearchCriteria.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublisherManagementModal.razor
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublisherService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/RequestDtos.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/RequestManagementDtos.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/RequestManagementService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/RequestService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/ServiceDtos.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/UserDtos.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/UserService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/_Host.cshtml
@@ -36,8 +51,7 @@ https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/ap
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/libman.json
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/site.css
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/web.config
-https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/RequestDtos.cs
-https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/RequestManagementService.cs
-https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/RequestService.cs
+
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/WhoAmIResult.cs
+
 
