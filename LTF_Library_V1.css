@@ -808,11 +808,162 @@
         background-color: #f0f0f0;
         color: #000;
     }
+/* Enhanced modal styles */
+.modal-xl
+{
+    max-width: 900px;
+    width: 90%;
+}
 
-/* ==================================================
+.form-section
+{
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+
+    .form-section h3
+    {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #2c3e50;
+        font-size: 1.1em;
+    }
+
+.selected-items-container
+{
+    margin-bottom: 15px;
+    min-height: 40px;
+}
+
+.selected-items
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.selected-item
+{
+    display: inline-flex;
+    align-items: center;
+    background-color: #3498db;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.9em;
+}
+
+    .selected-item .remove-btn
+    {
+        background: none;
+        border: none;
+        color: white;
+        margin-left: 8px;
+        font-size: 1.2em;
+        cursor: pointer;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .selected-item .remove-btn:hover
+        {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+
+.no-items-text
+{
+    color: #999;
+    font-style: italic;
+    margin: 5px 0;
+}
+
+.add-item-row
+{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.keyword-input-container
+{
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+    .keyword-input-container input
+    {
+        flex: 1;
+    }
+
+.btn-add-keyword
+{
+    padding: 8px 16px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+    .btn-add-keyword:hover
+    {
+        background-color: #229954;
+    }
+
+.form-select, .form-input
+{
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.form-row
+{
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-field
+{
+    flex: 1;
+}
+
+    .form-field.flex-grow
+    {
+        flex: 2;
+    }
+
+    .form-field label
+    {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea
+    {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        /* ==================================================
    FORM COMPONENTS
    ================================================== */
-.request-form
+        .request-form
 {
     padding: 20px;
 }
@@ -1082,7 +1233,7 @@
         margin: 0;
         color: var(--secondary-color);
     }
-
+/*here*/
 .request-table
 {
     width: 100%;
@@ -1109,9 +1260,9 @@
 
     .request-table tbody tr:hover
     {
-        background-color: #f8f9fa;
+        background-color: var(--background-light);
     }
-
+    /* Column 1: Publication Title/User*/
     .request-table th:nth-child(1),
     .request-table td:nth-child(1),
     .request-table .publication-title
@@ -1123,35 +1274,67 @@
         overflow-wrap: break-word;
     }
 
-
-    
+/* Column 2: Requester/UserName */
 .request-table th:nth-child(2),
 .request-table td:nth-child(2),
 .request-table .requester-name
 {
-    width: 8%;
+    width: 10%;
     font-weight: 500;
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
-
-.request-table th:nth-child(3),
-.request-table td:nth-child(3)
-{
-    width: 12%;
-}
-    .request-table .request-date
+    /* Column 3: Request Type/email  */
+    .request-table th:nth-child(3),
+    .request-table td:nth-child(3)
+    .request-table .request-type
+    {
+        width: 10%;
+    }
+/* Column 4: Request Status/Roles*/
+    .request-table th:nth-child(4),
+    .request-table td:nth-child(4)
+    .request-table .request-status
     {
         font-size: 0.9em;
         color: var(--text-muted);
         width: 10%;
     }
+/* Column 5: Purpose */
+    .request-table th:nth-child(5),
+    .request-table td:nth-child(5)
+    .request-table .request-purpose
+    {
+        width: 14%;
+    }
+/* Column 6: Date */
+    .request-table th:nth-child(6),
+    .request-table td:nth-child(6)
+    .request-table .request-date
+    {
+        width: 8%;
+    }
 
+    /* Column 7: Days Ago */
+    .request-table th:nth-child(7),
+    .request-table td:nth-child(7)
+    .request-table .request-days
+    {
+        width: 8%;
+    }
+
+    /* Column 8: Actions */
+    .request-table th:nth-child(8),
+    .request-table td:nth-child(8)
+    .request-table .request-actions
+    {
+        width: 15%;
+    }
 /* Status Badges */
 .status-badge
 {
     padding: 4px 12px;
-    border-radius: 12px;
+    border-radius: 6px;
     font-size: 0.8em;
     font-weight: bold;
     text-transform: uppercase;
@@ -1188,33 +1371,7 @@
     color: #0c5460;
     border: 1px solid #bee5eb;
 }
-/* Column 4: Purpose */
-.request-table th:nth-child(4),
-.request-table td:nth-child(4)
-{
-    width: 12%;
-}
 
-/* Column 5: Date */
-.request-table th:nth-child(5),
-.request-table td:nth-child(5)
-{
-    width: 12%;
-}
-
-/* Column 6: Days Ago */
-.request-table th:nth-child(6),
-.request-table td:nth-child(6)
-{
-    width: 8%;
-}
-
-/* Column 7: Actions */
-.request-table th:nth-child(7),
-.request-table td:nth-child(7)
-{
-    width: 15%;
-}
 /* Request Actions */
 .request-actions
 {
@@ -1266,7 +1423,7 @@
 
 .view-btn
 {
-    background-color: #6c757d;
+    background-color: var( --text-muted);
     color: white;
 }
 
@@ -1274,7 +1431,7 @@
     {
         background-color: #545b62;
     }
-
+/*table to here*/
 /* Request Processing Modal */
 .processing-form
 {
@@ -1470,6 +1627,221 @@
     {
         padding: 8px;
     }
+}
+/* Keyword and chip styling */
+.keyword-chips, .category-chips, .author-chips
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.keyword-chip, .category-chip, .author-chip
+{
+    background: #3498db;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.remove-btn
+{
+    background: none;
+    border: none;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .remove-btn:hover
+    {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+.suggestion-chips
+{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.suggestion-chip
+{
+    background: #ecf0f1;
+    color: var(--secondary-color);
+    border: 1px solid #bdc3c7;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+    .suggestion-chip:hover
+    {
+        background: #d5dbdb;
+    }
+
+    .suggestion-chip.selected
+    {
+        background: #95a5a6;
+        color: white;
+        cursor: not-allowed;
+    }
+
+.keyword-input
+{
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+}
+
+.edit-sections
+{
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.edit-section
+{
+    background: var(--background-light);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.form-grid
+{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+.form-field.full-width
+{
+    grid-column: 1 / -1;
+}
+
+.input-with-button
+{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+    .input-with-button select
+    {
+        flex: 1;
+    }
+
+.no-items
+{
+    color: var( --text-muted);
+    font-style: italic;
+}
+
+.help-text
+{
+    font-size: 0.9em;
+    color: var( --text-muted);
+    margin-top: 5px;
+}
+
+.more-results
+{
+    font-size: 0.9em;
+    color: var( --text-muted);
+    margin-top: 10px;
+}
+
+.no-results
+{
+    color: var( --text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+ 
+ .edit-section
+{
+    background: var(--background-light);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 20px;
+}
+
+
+.form-field.full-width
+{
+    grid-column: 1 / -1;
+}
+
+.large-input
+{
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+
+/* Add this CSS to your existing CSS file (LTF_Library_V1.css) */
+
+
+
+    .form-field.full-width
+    {
+        grid-column: 1 / -1;
+    }
+
+.large-input, .form-control
+{
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.large-modal.modal-content
+{
+    max-width: 1200px; /* Increased from 800px (50% wider) */
+    width: 95vw; /* Increased from 90vw for more screen usage */
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.current-authors, .current-categories, .current-keywords
+{
+    padding: 15px;
+    background: #f1f3f4;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.modal-footer
+{
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
 }
 /* ==================================================
    VALIDATION & ERROR STYLES

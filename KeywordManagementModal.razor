@@ -1,0 +1,220 @@
+﻿@using LTF_Library_V1.DTOs
+@using LTF_Library_V1.Services
+@inject IPublicationService PublicationService
+@inject IJSRuntime JSRuntime
+
+<div class="modal">
+    <div class="large-modal modal-content">
+        <div class="modal-header">
+            <h2>Manage Keywords</h2>
+            <button class="close-btn" @onclick="Close">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Add New Keyword -->
+            <div class="add-section">
+                <h3>Add Keywords</h3>
+                <div class="add-form">
+                    <input type="text" @bind="NewKeyword" @onkeypress="HandleKeyPress"
+                           placeholder="Enter keyword and press Enter or click Add" class="keyword-input" />
+                    <button @onclick="AddKeyword" class="btn-base btn-success" disabled="@string.IsNullOrWhiteSpace(NewKeyword)">
+                        Add
+                    </button>
+                </div>
+                <p class="help-text">Tip: You can enter multiple keywords separated by commas</p>
+            </div>
+
+            <!-- Selected Keywords -->
+            <div class="selected-section">
+                <h3>Selected Keywords for this Publication</h3>
+                @if (WorkingKeywords.Any())
+                {
+                    <div class="keyword-chips editable">
+                        @foreach (var keyword in WorkingKeywords)
+                        {
+                            <span class="keyword-chip">
+                                @keyword
+                                <button type="button" @onclick="@(() => RemoveKeyword(keyword))" class="remove-btn">×</button>
+                            </span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="no-items">No keywords selected</p>
+                }
+            </div>
+
+            <!-- Suggested Keywords -->
+            <div class="suggestions-section">
+                <h3>Suggested Keywords</h3>
+                <div class="search-box">
+                    <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="FilterSuggestions"
+                           placeholder="Search existing keywords..." />
+                </div>
+
+                @if (IsLoadingSuggestions)
+                {
+                    <p>Loading suggestions...</p>
+                }
+                else if (FilteredSuggestions.Any())
+                {
+                    <div class="suggestion-chips">
+                        @foreach (var suggestion in FilteredSuggestions.Take(20))
+                        {
+                            <button type="button" @onclick="@(() => AddExistingKeyword(suggestion))"
+                                    class="suggestion-chip @(WorkingKeywords.Contains(suggestion) ? "selected" : "")"
+                                    disabled="@WorkingKeywords.Contains(suggestion)">
+                                @suggestion
+                            </button>
+                        }
+                    </div>
+                    @if (FilteredSuggestions.Count > 20)
+                    {
+                        <p class="more-results">And @(FilteredSuggestions.Count - 20) more... (refine search to see them)</p>
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(SearchTerm))
+                {
+                    <p class="no-results">No existing keywords match your search.</p>
+                }
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button @onclick="SaveAndClose" class="btn-base btn-success">Save Changes</button>
+            <button @onclick="CancelAndClose" class="btn-base btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<string>? SelectedKeywords
+    {
+        get; set;
+    }
+    [Parameter]
+    public EventCallback OnClose
+    {
+        get; set;
+    }
+    [Parameter]
+    public EventCallback<List<string>> OnKeywordsUpdated
+    {
+        get; set;
+    }
+
+    private List<string> WorkingKeywords = new();
+    private List<string> AllKeywords = new();
+    private List<string> FilteredSuggestions = new();
+    private string NewKeyword = "";
+    private string SearchTerm = "";
+    private bool IsLoadingSuggestions = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Copy the selected keywords to work with
+        WorkingKeywords = SelectedKeywords?.ToList() ?? new List<string>();
+        await LoadAllKeywords();
+        FilterSuggestions();
+    }
+
+    private async Task LoadAllKeywords()
+    {
+        IsLoadingSuggestions = true;
+        try
+        {
+            AllKeywords = await PublicationService.GetAllKeywordsAsync();
+        }
+        finally
+        {
+            IsLoadingSuggestions = false;
+        }
+    }
+
+    private void FilterSuggestions()
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            // Show most common keywords not already selected
+            FilteredSuggestions = AllKeywords
+                .Where(k => !WorkingKeywords.Contains(k, StringComparer.OrdinalIgnoreCase))
+                .OrderBy(k => k)
+                .ToList();
+        }
+        else
+        {
+            FilteredSuggestions = AllKeywords
+                .Where(k => k.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) &&
+                           !WorkingKeywords.Contains(k, StringComparer.OrdinalIgnoreCase))
+                .OrderBy(k => k)
+                .ToList();
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AddKeyword();
+        }
+    }
+
+    private async Task AddKeyword()
+    {
+        if (string.IsNullOrWhiteSpace(NewKeyword))
+            return;
+
+        // Handle comma-separated keywords
+        var keywords = NewKeyword.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(k => k.Trim())
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .ToList();
+
+        foreach (var keyword in keywords)
+        {
+            if (!WorkingKeywords.Contains(keyword, StringComparer.OrdinalIgnoreCase))
+            {
+                WorkingKeywords.Add(keyword);
+            }
+        }
+
+        NewKeyword = "";
+        FilterSuggestions(); // Refresh suggestions to remove newly added keywords
+        StateHasChanged();
+    }
+
+    private void AddExistingKeyword(string keyword)
+    {
+        if (!WorkingKeywords.Contains(keyword, StringComparer.OrdinalIgnoreCase))
+        {
+            WorkingKeywords.Add(keyword);
+            FilterSuggestions(); // Refresh to remove this keyword from suggestions
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveKeyword(string keyword)
+    {
+        WorkingKeywords.Remove(keyword);
+        FilterSuggestions(); // Refresh to add this keyword back to suggestions
+        StateHasChanged();
+    }
+
+    private async Task SaveAndClose()
+    {
+        await OnKeywordsUpdated.InvokeAsync(WorkingKeywords);
+    }
+
+    private async Task CancelAndClose()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

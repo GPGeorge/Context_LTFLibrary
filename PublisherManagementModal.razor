@@ -1,0 +1,207 @@
+﻿@using LTF_Library_V1.DTOs
+@using LTF_Library_V1.Services
+@inject IPublisherService PublisherService
+@inject IJSRuntime JSRuntime
+
+<div class="modal">
+    <div class="large-modal modal-content">
+        <div class="modal-header">
+            <h2>Manage Publishers</h2>
+            <button class="close-btn" @onclick="Close">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Add New Publisher -->
+            <div class="add-section">
+                <h3>Add New Publisher</h3>
+                <EditForm Model="NewPublisher" OnValidSubmit="AddPublisher">
+                    <div class="add-form">
+                        <InputText @bind-Value="NewPublisher.Publisher1" placeholder="Publisher Name" />
+                        <InputText @bind-Value="NewPublisher.PublisherGoogle" placeholder="Google Publisher Name (optional)" />
+                        <button type="submit" class="btn-base btn-success" disabled="@IsAdding">
+                            @(IsAdding ? "Adding..." : "Add")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+
+            <!-- Publisher List -->
+            <div class="list-section">
+                <h3>Existing Publishers</h3>
+                <div class="search-box">
+                    <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="FilterPublishers"
+                           placeholder="Search publishers..." />
+                </div>
+
+                <div class="publisher-list">
+                    @if (FilteredPublishers?.Any() == true)
+                    {
+                        @foreach (var publisher in FilteredPublishers)
+                        {
+                            <div class="publisher-item">
+                                @if (EditingPublisherId == publisher.PublisherID)
+                                {
+                                    <div class="edit-form">
+                                        <InputText @bind-Value="EditingPublisher.Publisher1" />
+                                        <InputText @bind-Value="EditingPublisher.PublisherGoogle" />
+                                        <button @onclick="SavePublisher" class="btn-base btn-success btn-sm">Save</button>
+                                        <button @onclick="CancelEdit" class="btn-base btn-secondary btn-sm">Cancel</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="publisher-display">
+                                        <span class="publisher-name">@publisher.DisplayName</span>
+                                        <div class="publisher-actions">
+                                            <button @onclick="@(() => SelectPublisher(publisher))" class="btn-base btn-primary btn-sm">
+                                                Select
+                                            </button>
+                                            <button @onclick="@(() => StartEdit(publisher))" class="btn-base btn-secondary btn-sm">
+                                                Edit
+                                            </button>
+                                            <button @onclick="@(() => DeletePublisher(publisher))" class="btn-base btn-danger btn-sm">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnClose
+    {
+        get; set;
+    }
+    [Parameter]
+    public EventCallback<PublisherDto> OnPublisherSelected
+    {
+        get; set;
+    }
+
+    private List<PublisherDto> Publishers = new();
+    private List<PublisherDto> FilteredPublishers = new();
+    private PublisherDto NewPublisher = new();
+    private PublisherDto EditingPublisher = new();
+    private int? EditingPublisherId = null;
+    private string SearchTerm = "";
+    private bool IsAdding = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPublishers();
+    }
+
+    private async Task LoadPublishers()
+    {
+        Publishers = await PublisherService.GetPublishersAsync();
+        FilterPublishers();
+    }
+
+    private void FilterPublishers()
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            FilteredPublishers = Publishers.ToList();
+        }
+        else
+        {
+            FilteredPublishers = Publishers
+                .Where(p => p.DisplayName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        StateHasChanged();
+    }
+
+    private async Task AddPublisher()
+    {
+        if (string.IsNullOrWhiteSpace(NewPublisher.Publisher1))
+            return;
+
+        IsAdding = true;
+        try
+        {
+            var result = await PublisherService.AddPublisherAsync(NewPublisher);
+            if (result.Success)
+            {
+                NewPublisher = new();
+                await LoadPublishers();
+                await JSRuntime.InvokeVoidAsync("alert", "Publisher added successfully!");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {result.Message}");
+            }
+        }
+        finally
+        {
+            IsAdding = false;
+        }
+    }
+
+    private void StartEdit(PublisherDto publisher)
+    {
+        EditingPublisherId = publisher.PublisherID;
+        EditingPublisher = new PublisherDto
+        {
+            PublisherID = publisher.PublisherID,
+            Publisher1 = publisher.Publisher1,
+            PublisherGoogle = publisher.PublisherGoogle
+        };
+    }
+
+    private async Task SavePublisher()
+    {
+        var result = await PublisherService.UpdatePublisherAsync(EditingPublisher);
+        if (result.Success)
+        {
+            await LoadPublishers();
+            CancelEdit();
+            await JSRuntime.InvokeVoidAsync("alert", "Publisher updated successfully!");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {result.Message}");
+        }
+    }
+
+    private void CancelEdit()
+    {
+        EditingPublisherId = null;
+        EditingPublisher = new();
+    }
+
+    private async Task DeletePublisher(PublisherDto publisher)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete '{publisher.DisplayName}'?"))
+        {
+            var result = await PublisherService.DeletePublisherAsync(publisher.PublisherID);
+            if (result.Success)
+            {
+                await LoadPublishers();
+                await JSRuntime.InvokeVoidAsync("alert", "Publisher deleted successfully!");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {result.Message}");
+            }
+        }
+    }
+
+    private async Task SelectPublisher(PublisherDto publisher)
+    {
+        await OnPublisherSelected.InvokeAsync(publisher);
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

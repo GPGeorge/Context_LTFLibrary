@@ -1,0 +1,354 @@
+﻿@page "/admin/publication/edit/{id:int}"
+@using LTF_Library_V1.DTOs
+@using LTF_Library_V1.Services
+@using Microsoft.AspNetCore.Authorization
+@inject IPublicationService PublicationService
+@inject IPublisherService PublisherService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Admin,Staff")]
+
+<PageTitle>Edit Publication - LTF Library Admin</PageTitle>
+
+@if (Publication != null)
+{
+    <div class="edit-publication-container">
+        <div class="edit-header">
+            <h1>Edit Publication</h1>
+            <div class="edit-actions">
+                <button @onclick="SavePublication" class="btn-base btn-success" disabled="@IsSaving">
+                    @(IsSaving ? "Saving..." : "Save Changes")
+                </button>
+                <button @onclick="CancelEdit" class="btn-base btn-secondary">Cancel</button>
+            </div>
+        </div>
+
+        <EditForm Model="Publication" OnValidSubmit="SavePublication">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="edit-sections">
+                <!-- Basic Information Section -->
+                <div class="edit-section">
+                    <h3>Basic Information</h3>
+                    <div class="form-grid">
+                        <div class="form-field full-width">
+                            <label for="title">Title *</label>
+                            <InputText @bind-Value="Publication.PublicationTitle" id="title" class="large-input" />
+                        </div>
+                        
+                        <div class="form-field">
+                            <label for="isbn">ISBN</label>
+                            <InputText @bind-Value="Publication.ISBN" id="isbn" />
+                        </div>
+                        
+                        <div class="form-field">
+                            <label for="year">Year Published</label>
+                            <InputText @bind-Value="Publication.YearPublished" id="year" />
+                        </div>
+                        
+                        <div class="form-field">
+                            <label for="edition">Edition</label>
+                            <InputText @bind-Value="Publication.Edition" id="edition" />
+                        </div>
+                        
+                        <div class="form-field">
+                            <label for="pages">Pages</label>
+                            <InputNumber @bind-Value="Publication.Pages" id="pages" />
+                        </div>
+                        
+                        <div class="form-field">
+                            <label for="volume">Volume</label>
+                            <InputNumber @bind-Value="Publication.Volume" id="volume" />
+                        </div>
+                        
+                        <div class="form-field">
+                            <label for="numVolumes">Number of Volumes</label>
+                            <InputNumber @bind-Value="Publication.NumberOfVolumes" id="numVolumes" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Publisher Section -->
+                <div class="edit-section">
+                    <h3>Publisher</h3>
+                    <div class="publisher-selection">
+                        <div class="form-field">
+                            <label>Select Publisher</label>
+                            <div class="input-with-button">
+                                <select @bind="Publication.PublisherID">
+                                    <option value="">Select Publisher...</option>
+                                    @if (Publishers != null)
+                                    {
+                                        @foreach (var pub in Publishers)
+                                        {
+                                            <option value="@pub.PublisherID">@pub.DisplayName</option>
+                                        }
+                                    }
+                                </select>
+                                <button type="button" @onclick="ShowPublisherModal" class="btn-base btn-secondary">
+                                    Manage Publishers
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Authors Section -->
+                <div class="edit-section">
+                    <h3>Authors/Creators</h3>
+                    <div class="authors-management">
+                        <div class="selected-authors">
+                            <h4>Selected Authors:</h4>
+                            @if (Publication.SelectedAuthors?.Any() == true)
+                            {
+                                <div class="author-chips">
+                                    @foreach (var author in Publication.SelectedAuthors)
+                                    {
+                                        <span class="author-chip">
+                                            @author.FullName
+                                            <button type="button" @onclick="@(() => RemoveAuthor(author))" class="remove-btn">×</button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="no-items">No authors selected</p>
+                            }
+                        </div>
+                        <button type="button" @onclick="ShowAuthorModal" class="btn-base btn-primary">
+                            Manage Authors
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Categories Section -->
+                <div class="edit-section">
+                    <h3>Categories</h3>
+                    <div class="categories-management">
+                        <div class="selected-categories">
+                            <h4>Selected Categories:</h4>
+                            @if (Publication.SelectedCategories?.Any() == true)
+                            {
+                                <div class="category-chips">
+                                    @foreach (var category in Publication.SelectedCategories)
+                                    {
+                                        <span class="category-chip">
+                                            @category.Genre
+                                            <button type="button" @onclick="@(() => RemoveCategory(category))" class="remove-btn">×</button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="no-items">No categories selected</p>
+                            }
+                        </div>
+                        <button type="button" @onclick="ShowCategoryModal" class="btn-base btn-primary">
+                            Manage Categories
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Keywords Section -->
+                <div class="edit-section">
+                    <h3>Keywords</h3>
+                    <div class="keywords-management">
+                        <div class="selected-keywords">
+                            <h4>Selected Keywords:</h4>
+                            @if (Publication.Keywords?.Any() == true)
+                            {
+                                <div class="keyword-chips">
+                                    @foreach (var keyword in Publication.Keywords)
+                                    {
+                                        <span class="keyword-chip">
+                                            @keyword
+                                            <button type="button" @onclick="@(() => RemoveKeyword(keyword))" class="remove-btn">×</button>
+                                        </span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="no-items">No keywords selected</p>
+                            }
+                        </div>
+                        <button type="button" @onclick="ShowKeywordModal" class="btn-base btn-primary">
+                            Manage Keywords
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Description Section -->
+                <div class="edit-section">
+                    <h3>Description & Notes</h3>
+                    <div class="form-field full-width">
+                        <label for="comments">Description</label>
+                        <InputTextArea @bind-Value="Publication.Comments" id="comments" rows="5" />
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+<!-- Publisher Management Modal -->
+@if (ShowPublisherModalFlag)
+{
+    <PublisherManagementModal @ref="PublisherModal" 
+                             OnClose="ClosePublisherModal" 
+                             OnPublisherSelected="SelectPublisher" />
+}
+
+@* <!-- Author Management Modal -->
+@if (ShowAuthorModalFlag)
+{
+    <AuthorManagementModal @ref="AuthorModal"
+                          SelectedAuthors="Publication?.SelectedAuthors"
+                          OnClose="CloseAuthorModal"
+                          OnAuthorsUpdated="UpdateAuthors" />
+}
+
+<!-- Category Management Modal -->
+@if (ShowCategoryModalFlag)
+{
+    <CategoryManagementModal @ref="CategoryModal"
+                            SelectedCategories="Publication?.SelectedCategories"
+                            OnClose="CloseCategoryModal"
+                            OnCategoriesUpdated="UpdateCategories" />
+}
+
+<!-- Keyword Management Modal -->
+@if (ShowKeywordModalFlag)
+{
+    <KeywordManagementModal @ref="KeywordModal"
+                           SelectedKeywords="Publication?.Keywords"
+                           OnClose="CloseKeywordModal"
+                           OnKeywordsUpdated="UpdateKeywords" />
+} *@
+
+@code {
+    [Parameter] public int Id { get; set; }
+    
+    private PublicationEditDto? Publication;
+    private List<PublisherDto>? Publishers;
+    private bool IsSaving = false;
+    
+    // Modal state
+    private bool ShowPublisherModalFlag = false;
+    private bool ShowAuthorModalFlag = false;
+    private bool ShowCategoryModalFlag = false;
+    private bool ShowKeywordModalFlag = false;
+    
+    private PublisherManagementModal? PublisherModal;
+    // private AuthorManagementModal? AuthorModal;
+    // private CategoryManagementModal? CategoryModal;
+    private KeywordManagementModal? KeywordModal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPublication();
+        await LoadDropdownData();
+    }
+
+    private async Task LoadPublication()
+    {
+        Publication = await PublicationService.GetPublicationForEditAsync(Id);
+    }
+
+    private async Task LoadDropdownData()
+    {
+        Publishers = await PublisherService.GetPublishersAsync();
+    }
+
+    private async Task SavePublication()
+    {
+        if (Publication == null) return;
+        
+        IsSaving = true;
+        try
+        {
+            var result = await PublicationService.UpdatePublicationAsync(Publication);
+            if (result.Success)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Publication updated successfully!");
+                Navigation.NavigateTo("/admin");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {result.Message}");
+            }
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        Navigation.NavigateTo("/admin");
+    }
+
+    // Publisher modal methods
+    private void ShowPublisherModal() => ShowPublisherModalFlag = true;
+    private void ClosePublisherModal() => ShowPublisherModalFlag = false;
+    private void SelectPublisher(PublisherDto publisher)
+    {
+        if (Publication != null)
+        {
+            Publication.PublisherID = publisher.PublisherID;
+        }
+        ClosePublisherModal();
+    }
+
+    // Author modal methods
+    private void ShowAuthorModal() => ShowAuthorModalFlag = true;
+    private void CloseAuthorModal() => ShowAuthorModalFlag = false;
+    private void UpdateAuthors(List<CreatorDto> authors)
+    {
+        if (Publication != null)
+        {
+            Publication.SelectedAuthors = authors;
+        }
+        CloseAuthorModal();
+    }
+    private void RemoveAuthor(CreatorDto author)
+    {
+        Publication?.SelectedAuthors?.Remove(author);
+    }
+
+    // Category modal methods
+    private void ShowCategoryModal() => ShowCategoryModalFlag = true;
+    private void CloseCategoryModal() => ShowCategoryModalFlag = false;
+    private void UpdateCategories(List<GenreDto> categories)
+    {
+        if (Publication != null)
+        {
+            Publication.SelectedCategories = categories;
+        }
+        CloseCategoryModal();
+    }
+    private void RemoveCategory(GenreDto category)
+    {
+        Publication?.SelectedCategories?.Remove(category);
+    }
+
+    // Keyword modal methods
+    private void ShowKeywordModal() => ShowKeywordModalFlag = true;
+    private void CloseKeywordModal() => ShowKeywordModalFlag = false;
+    private void UpdateKeywords(List<string> keywords)
+    {
+        if (Publication != null)
+        {
+            Publication.Keywords = keywords;
+        }
+        CloseKeywordModal();
+    }
+    private void RemoveKeyword(string keyword)
+    {
+        Publication?.Keywords?.Remove(keyword);
+    }
+}

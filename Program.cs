@@ -73,54 +73,12 @@ Console.WriteLine($"loginPath: '{loginPath}'");
 Console.WriteLine($"basePath: '{basePath}'");
 Console.WriteLine($"========================");
 
-// Configure Cookie Authentication
-//builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-//    .AddCookie(options =>
-//    {
-//        options.Cookie.Name = "LTFCatalog.Auth";
-     
-//        options.LoginPath = loginPath;
-//        options.LogoutPath = logoutPath;
-//        options.AccessDeniedPath = accessDeniedPath;
-//        options.Cookie.HttpOnly = true;
-
-//        // This adapts automatically:
-//        // - On localhost (HTTP): allows non-secure cookies
-//        // - On production (HTTPS): marks cookie as Secure
-//        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-//        options.ExpireTimeSpan = TimeSpan.FromDays(30);
-//        options.SlidingExpiration = true;
-
-
-//        // Safe default that works in both cases
-//        // - Localhost: accepted by Chrome/Edge/Brave
-//        // - Production: behaves like normal auth cookies
-//        options.Cookie.SecurePolicy = isLocal
-//        ? CookieSecurePolicy.None       // allow HTTP on localhost
-//        : CookieSecurePolicy.Always;    // require HTTPS in production
-//        options.Cookie.SameSite = isLocal
-//            ? SameSiteMode.Lax               // relaxed on localhost
-//            : SameSiteMode.Lax;              // standard in production
-//                                             // Optional: custom redirect logging
-//        options.Events.OnRedirectToLogin = context =>
-//        {
-//            Console.WriteLine($"Redirect to login: {context.RedirectUri}");
-//            context.Response.Redirect(context.RedirectUri);
-//            return Task.CompletedTask;
-//        };
-
-
-//    });
-
-
-
-
-
 // Register your custom services
 builder.Services.AddScoped<IPublicationService, PublicationService>();
 builder.Services.AddScoped<IRequestService, RequestService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRequestManagementService, RequestManagementService>();
+builder.Services.AddScoped<IPublisherService, PublisherService>();
 
 // Add HttpContextAccessor for accessing current user in services
 builder.Services.AddHttpContextAccessor();
@@ -326,8 +284,8 @@ static async Task SeedDataAsync(UserManager<ApplicationUser> userManager, RoleMa
             IsActive = true,
             CreatedDate = DateTime.Now
         };
-        //User Password sanitized for Public repo
-        var result = await userManager.CreateAsync(adminUser, "XXXXXX!");
+
+        var result = await userManager.CreateAsync(adminUser, "Admin123!");
 
         if (result.Succeeded)
         {
@@ -356,4 +314,3 @@ app.MapGet("/debug-user", async (UserManager<ApplicationUser> userManager) =>
     return $"User: {user.UserName}, Email: {user.Email}, IsActive: {user.IsActive}, EmailConfirmed: {user.EmailConfirmed}, Roles: {string.Join(",", roles)}";
 });
 app.Run();
-

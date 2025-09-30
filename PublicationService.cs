@@ -1,5 +1,6 @@
 ﻿using LTF_Library_V1.Data;
 using LTF_Library_V1.DTOs;
+using LTF_Library_V1.Data.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -109,12 +110,13 @@ namespace LTF_Library_V1.Services
                 throw;
             }
         }
-
+  
         public async Task<PublicationDetailDto?> GetPublicationDetailAsync(int publicationId)
         {
             try
             {
                 var publication = await _context.Publications
+                    .AsNoTracking() // Add this line
                     .Include(p => p.PublicationCreators)
                         .ThenInclude(pc => pc.Creator)
                     .Include(p => p.PublicationGenres)
@@ -167,6 +169,10 @@ namespace LTF_Library_V1.Services
                 _logger.LogError(ex, "Error getting publication detail for ID {PublicationId}", publicationId);
                 throw;
             }
+        }
+        public async Task<List<Publisher>> GetPublishersAsync()
+        {
+            return await _context.Publishers.ToListAsync();
         }
 
         public async Task<List<CreatorDto>> GetAuthorsAsync()
@@ -303,6 +309,7 @@ namespace LTF_Library_V1.Services
             try
             {
                 var publication = await _context.Publications
+                    .AsNoTracking() // Add this to ensure fresh data
                     .Include(p => p.Publisher)
                     .Include(p => p.MediaType)
                     .Include(p => p.MediaCondition)
@@ -384,6 +391,7 @@ namespace LTF_Library_V1.Services
                 throw;
             }
         }
+        //Here
         public async Task<ServiceResult> UpdatePublicationAsync(PublicationEditDto publicationDto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -420,7 +428,7 @@ namespace LTF_Library_V1.Services
 
                 await _context.SaveChangesAsync();
 
-                // Update Authors - Remove existing and add new
+                // Update Authors - Remove existing and add new using stored procedure with a transaction
 
                 var authorIds = string.Join(",", publicationDto.SelectedAuthors.Select(a => a.CreatorID));
 
@@ -429,7 +437,7 @@ namespace LTF_Library_V1.Services
                     new SqlParameter("@PublicationID", publication.PublicationID),
                     new SqlParameter("@AuthorIDs", authorIds));
 
-                // Update Categories - Remove existing and add new
+                // Update Categories - Remove existing and add new using stored procedure with a transaction
 
                 var categoryIDs = string.Join(",", publicationDto.SelectedCategories.Select(a => a.GenreID));
 
@@ -438,7 +446,7 @@ namespace LTF_Library_V1.Services
                     new SqlParameter("@PublicationID", publication.PublicationID),
                     new SqlParameter("@categoryIDs", categoryIDs));
 
-                // Update Keywords - Remove existing and add new
+                // Update Keywords - Remove existing and add new using stored procedure with a transaction
 
                 var keywordJson = JsonSerializer.Serialize(publicationDto.Keywords.Where(k => !string.IsNullOrWhiteSpace(k)));
 
@@ -448,9 +456,20 @@ namespace LTF_Library_V1.Services
 
                 //await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+                _context.ChangeTracker.Clear();
+                // Fetch fresh data from database
+                var refreshedPublication = await GetPublicationForEditAsync(publicationDto.PublicationID);
 
-                return ServiceResult.Successful("Publication updated successfully.");
-            }
+                if (refreshedPublication != null)
+                {
+                    return ServiceResult.Successful("Publication updated successfully.", refreshedPublication);
+                }
+                else
+                {
+                    // Still successful but couldn't get refreshed data
+                    return ServiceResult.Successful("Publication updated successfully.");
+                }
+                            }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
@@ -458,6 +477,7 @@ namespace LTF_Library_V1.Services
                 return ServiceResult.Failed("An error occurred while updating the publication.");
             }
         }
+        //to here
        
 
         public async Task<PublicationRequestSubmissionDto> SubmitRequestAsync(PublicationRequestDto request)

@@ -15,5 +15,7 @@ namespace LTF_Library_V1.Services
         Task<ServiceResult> UpdatePublicationAsync(PublicationEditDto publication);
         Task<List<string>> GetAllKeywordsAsync();
         Task<List<string>> GetKeywordsForPublicationAsync(int publicationId);
+        Task<List<PublisherDto>> GetPublishersAsync();
+
     }
 }

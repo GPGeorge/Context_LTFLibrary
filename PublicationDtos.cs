@@ -78,6 +78,18 @@ namespace LTF_Library_V1.DTOs
             get; set;
         }
     }
+   
+     public class PublisherDto
+    {
+        public int PublisherID { get; set; }
+        public string Publisher1 { get; set; } = string.Empty;
+        public string? PublisherGoogle { get; set; }
+        
+        public string DisplayName => 
+            !string.IsNullOrEmpty(PublisherGoogle) && Publisher1 != PublisherGoogle
+                ? $"{Publisher1} ({PublisherGoogle})"
+                : Publisher1;
+    }
 
     public class PublicationSearchResponse
     {
@@ -322,4 +334,124 @@ namespace LTF_Library_V1.DTOs
             get; set;
         }
     }
+    public class PublicationEditDto
+    {
+        public int PublicationID
+        {
+            get; set;
+        }
+
+        [Required]
+        [MaxLength(1000)]
+        public string PublicationTitle { get; set; } = string.Empty;
+
+        public string? CatalogNumber
+        {
+            get; set;
+        }
+        public string? Comments
+        {
+            get; set;
+        }
+        public string? CoverPhotoLink
+        {
+            get; set;
+        }
+        public string? Edition
+        {
+            get; set;
+        }
+        public string? ISBN
+        {
+            get; set;
+        }
+        public int? Volume
+        {
+            get; set;
+        }
+        public int? NumberOfVolumes
+        {
+            get; set;
+        }
+        public int? Pages
+        {
+            get; set;
+        }
+        public string? YearPublished
+        {
+            get; set;
+        }
+        public int? ConfidenceLevel
+        {
+            get; set;
+        }
+        public decimal? ListPrice
+        {
+            get; set;
+        }
+
+        // Foreign Keys
+        public int? PublisherID
+        {
+            get; set;
+        }
+        public int? MediaTypeID
+        {
+            get; set;
+        }
+        public int? MediaConditionID
+        {
+            get; set;
+        }
+        public int? ShelfID
+        {
+            get; set;
+        }
+
+        // Related Collections
+        public List<CreatorDto> SelectedAuthors { get; set; } = new();
+        public List<GenreDto> SelectedCategories { get; set; } = new();
+        public List<string> Keywords { get; set; } = new();
+        public class PublisherDto
+        {
+            public int PublisherID
+            {
+                get; set;
+            }
+            public string Publisher1 { get; set; } = string.Empty;
+            public string? PublisherGoogle
+            {
+                get; set;
+            }
+
+            public string DisplayName =>
+                !string.IsNullOrEmpty(PublisherGoogle) && Publisher1 != PublisherGoogle
+                    ? $"{Publisher1} ({PublisherGoogle})"
+                    : Publisher1;
+        }
+
+        public class ServiceResult
+        {
+            public bool Success
+            {
+                get; set;
+            }
+            public string Message { get; set; } = string.Empty;
+            public object? Data
+            {
+                get; set;
+            }
+
+            public static ServiceResult Successful(string message = "Operation completed successfully", object? data = null)
+            {
+                return new ServiceResult { Success = true, Message = message, Data = data };
+            }
+
+            public static ServiceResult Failed(string message)
+            {
+                return new ServiceResult { Success = false, Message = message };
+            }
+        }
+    }
+
 }

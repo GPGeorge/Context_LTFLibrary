@@ -1,4 +1,4 @@
-﻿// Services/RequestManagementService.cs - Alternative approach without DbContextFactory
+﻿// Services/RequestManagementService.cs
 using Microsoft.EntityFrameworkCore;
 using LTF_Library_V1.Data;
 using LTF_Library_V1.DTOs;
@@ -8,15 +8,15 @@ namespace LTF_Library_V1.Services
 {
     public class RequestManagementService : IRequestManagementService
     {
-        // CHANGED: Use IServiceProvider to create scoped contexts
-        private readonly IServiceProvider _serviceProvider;
+        // CHANGED: Use IDbContextFactory instead of direct DbContext injection
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
         private readonly ILogger<RequestManagementService> _logger;
 
         public RequestManagementService(
-            IServiceProvider serviceProvider,
+            IDbContextFactory<ApplicationDbContext> contextFactory,
             ILogger<RequestManagementService> logger)
         {
-            _serviceProvider = serviceProvider;
+            _contextFactory = contextFactory;
             _logger = logger;
         }
 
@@ -24,9 +24,8 @@ namespace LTF_Library_V1.Services
         {
             try
             {
-                // Create a new scope for each operation to avoid concurrency
-                using var scope = _serviceProvider.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                // CHANGED: Create a new context instance for this operation
+                await using var context = await _contextFactory.CreateDbContextAsync();
 
                 var pendingRequests = await context.PendingPublicRequests
                     .Select(pr => new PendingRequestDto
@@ -40,8 +39,7 @@ namespace LTF_Library_V1.Services
                         ResearchPurpose = pr.ResearchPurpose,
                         AdditionalInfo = pr.AdditionalInfo,
                         Status = pr.Status,
-                        RequestDate = pr.RequestDate,
-                        RequestType = pr.RequestType
+                        RequestDate = pr.RequestDate
                     })
                     .ToListAsync();
 
@@ -58,8 +56,8 @@ namespace LTF_Library_V1.Services
         {
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                // CHANGED: Create a new context instance for this operation
+                await using var context = await _contextFactory.CreateDbContextAsync();
 
                 var request = await context.PublicationRequests
                     .FirstOrDefaultAsync(r => r.RequestID == processRequest.RequestID);
@@ -78,7 +76,7 @@ namespace LTF_Library_V1.Services
                 {
                     "Approve" => "Approved",
                     "Deny" => "Denied",
-                    "RequestInfo" => "More Info Requested",
+                    "RequestInfo" => "Additional Information Requested",
                     _ => request.Status
                 };
 
@@ -92,17 +90,10 @@ namespace LTF_Library_V1.Services
                 // Send email notification (implement as needed)
                 await SendRequestStatusEmailAsync(request.RequestID, newStatus, processRequest.AdminNotes);
 
-                var message = processRequest.Action switch
-                {
-                    "Approve" => "Request approved",
-                    "Deny" => "Request denied",
-                    "RequestInfo" => "Additional information requested",
-                    _ => $"Request processed successfully"
-                };
                 return new RequestProcessingResult
                 {
                     Success = true,
-                    Message = message
+                    Message = $"Request {processRequest.Action.ToLower()}d successfully"
                 };
             }
             catch (Exception ex)
@@ -120,8 +111,8 @@ namespace LTF_Library_V1.Services
         {
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                // CHANGED: Create a new context instance for this operation
+                await using var context = await _contextFactory.CreateDbContextAsync();
 
                 var request = await context.PublicationRequests
                     .Include(r => r.Publication)
@@ -142,7 +133,7 @@ namespace LTF_Library_V1.Services
                     AdditionalInfo = request.AdditionalInfo,
                     Status = request.Status,
                     RequestDate = request.RequestDate,
-                    RequestType = request.RequestType 
+                    RequestType = request.RequestType
                 };
             }
             catch (Exception ex)
@@ -156,8 +147,8 @@ namespace LTF_Library_V1.Services
         {
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                // CHANGED: Create a new context instance for this operation
+                await using var context = await _contextFactory.CreateDbContextAsync();
 
                 var requests = await context.PublicationRequests
                     .Include(r => r.Publication)
@@ -193,11 +184,11 @@ namespace LTF_Library_V1.Services
             try
             {
                 // TODO: Implement email sending logic
-                // When implemented, this will likely use something like:
-                // await _emailService.SendAsync(...);
+                // This would integrate with your email service (SendGrid, SMTP, etc.)
+
                 _logger.LogInformation("Email notification sent for request {RequestId} with status {Status}",
                     requestId, status);
-                await Task.CompletedTask;
+
                 return true;
             }
             catch (Exception ex)
