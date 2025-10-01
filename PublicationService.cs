@@ -234,7 +234,7 @@ namespace LTF_Library_V1.Services
                 _logger.LogInformation($"Total genres in database: {count}");
 
                 var genres = await _context.Genres
-                    .OrderBy(g => g.SortOrder)
+                    .OrderBy(g => g.Genre1)
                     .Select(g => new GenreDto
                     {
                         GenreID = g.GenreID,
@@ -252,28 +252,6 @@ namespace LTF_Library_V1.Services
                 throw;
             }
         }
-        //public async Task<List<GenreDto>> GetGenresAsync()
-        //{
-        //    try
-        //    {
-        //        return await _context.Genres
-        //            .Where(g => g.PublicationGenres.Any()) // Only genres with publications
-        //            .OrderBy(g => g.SortOrder)
-        //            .ThenBy(g => g.Genre1)
-        //            .Select(g => new GenreDto
-        //            {
-        //                GenreID = g.GenreID,
-        //                Genre = g.Genre1!,
-        //                SortOrder = g.SortOrder
-        //            })
-        //            .ToListAsync();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error getting genres");
-        //        throw;
-        //    }
-        //}
 
         public async Task<List<MediaTypeDto>> GetMediaTypesAsync()
         {
