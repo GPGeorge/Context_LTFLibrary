@@ -622,7 +622,7 @@
 @if (ShowEditPublicationModal && EditingPublication != null)
 {
     <div class="modal" @onclick="CloseEditPublicationModal">
-        <div class="modal-content modal-xl" @onclick:stopPropagation="true">
+        <div class="large-modal modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">Edit Publication</h2>
                 <button class="close-btn" @onclick="CloseEditPublicationModal">&times;</button>
@@ -696,10 +696,9 @@
 
                         @* Add Author Dropdown *@
                         <div class="add-item-row">
-                            <select @onchange="@((e) =>  AddAuthor(e))" class="form-select">
+                            <select @onchange="AddAuthor" class="form-select">
                                 <option value="">-- Select Author to Add --</option>
-
-                                @if (AvailableAuthors != null)
+                                @if (AvailableAuthors != null && EditingPublication?.SelectedAuthors != null)
                                 {
                                     @foreach (var author in AvailableAuthors.Where(a =>
                                                                 !EditingPublication.SelectedAuthors.Any(sa => sa.CreatorID == a.CreatorID)))
@@ -717,7 +716,7 @@
 
                         @* Display Selected Categories *@
                         <div class="selected-items-container">
-                            @if (EditingPublication.SelectedCategories != null && EditingPublication.SelectedCategories.Any())
+                            @if (EditingPublication?.SelectedCategories != null && EditingPublication.SelectedCategories.Any())
                             {
                                 <div class="selected-items">
                                     @foreach (var category in EditingPublication.SelectedCategories)
@@ -739,17 +738,55 @@
 
                         @* Add Category Dropdown *@
                         <div class="add-item-row">
-                            <select @onchange="@((e) => AddCategory(e))" class="form-select">
+                            <select @onchange="AddCategory" class="form-select">
                                 <option value="">-- Select Category to Add --</option>
-                                @if (AvailableCategories != null)
+                                @if (AvailableCategories != null && EditingPublication?.SelectedCategories != null)
                                 {
-                                    @foreach (var category in AvailableCategories.Where(c =>
-                                                                !EditingPublication.SelectedCategories.Any(sc => sc.GenreID == c.GenreID)))
+                                    @foreach (var category in AvailableCategories.Where(c => !EditingPublication.SelectedCategories.Any(sc => sc.GenreID == c.GenreID)))
                                     {
                                         <option value="@category.GenreID">@category.Genre</option>
                                     }
                                 }
                             </select>
+                        </div>
+                    </div>
+
+                    @* Publisher Section *@
+                    <div class="form-section">
+                        <h3>Publisher</h3>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="pubPublisher">Publisher</label>
+                                @if (EditingPublication != null)
+                                {
+                                    <InputSelect @bind-Value="EditingPublication.PublisherID" id="pubPublisher">
+                                        <option value="">-- Select Publisher --</option>
+                                        @if (Publishers != null)
+                                        {
+                                            @foreach (var publisher in Publishers)
+                                            {
+                                                <option value="@publisher.PublisherID">@publisher.DisplayName</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                }
+                            </div>
+                            <div class="form-field">
+                                <label for="pubMediaType">Media Type</label>
+                                @if (EditingPublication != null)
+                                {
+                                    <InputSelect @bind-Value="EditingPublication.MediaTypeID" id="pubMediaType">
+                                        <option value="">-- Select Media Type --</option>
+                                        @if (MediaTypes != null)
+                                        {
+                                            @foreach (var mediaType in MediaTypes)
+                                            {
+                                                <option value="@mediaType.MediaTypeID">@mediaType.MediaType</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                }
+                            </div>
                         </div>
                     </div>
 
@@ -759,7 +796,7 @@
 
                         @* Display Selected Keywords *@
                         <div class="selected-items-container">
-                            @if (EditingPublication.Keywords != null && EditingPublication.Keywords.Any())
+                            @if (EditingPublication?.Keywords != null && EditingPublication.Keywords.Any())
                             {
                                 <div class="selected-items">
                                     @foreach (var keyword in EditingPublication.Keywords)
@@ -778,65 +815,34 @@
                                 <p class="no-items-text">No keywords added</p>
                             }
                         </div>
-                        </div>
+                    </div>
 
                        
-                        @* Add Keyword Input with Autocomplete *@
-                        <div class="add-item-row">
-                            <div class="keyword-input-container">
-                                <input type="text" @bind="NewKeyword" @bind:event="oninput" 
-                                       @onkeydown="@((e) => HandleKeywordKeyDown(e))"
-                                       placeholder="Type keyword and press Enter or click Add"
-                                       list="keyword-suggestions" class="form-input" />
-                                <button type="button" @onclick="AddKeyword" class="btn-add-keyword">
-                                    Add Keyword
-                                </button>
-                            </div>
-                            <datalist id="keyword-suggestions">
-                                @if (ApprovedKeywords != null)
+                    @* Add Keyword Input with Autocomplete *@
+                    <div class="add-item-row">
+                        <div class="keyword-input-container">
+                            <input type="text" @bind="NewKeyword" @bind:event="oninput" 
+                                    @onkeydown="@((e) => HandleKeywordKeyDown(e))"
+                                    placeholder="Type keyword and press Enter or click Add"
+                                    list="keyword-suggestions" class="form-input" />
+                            <button type="button" @onclick="AddKeyword" class="btn-add-keyword">
+                                Add Keyword
+                            </button>
+                        </div>
+                        <datalist id="keyword-suggestions">
+                            @if (ApprovedKeywords != null&& EditingPublication?.Keywords != null)
+                            {
+                                @foreach (var keyword in ApprovedKeywords.Where(k => 
+                                    !EditingPublication.Keywords.Contains(k) && 
+                                    (string.IsNullOrEmpty(NewKeyword) || k.Contains(NewKeyword, StringComparison.OrdinalIgnoreCase))))
                                 {
-                                    @foreach (var keyword in ApprovedKeywords.Where(k => 
-                                        !EditingPublication.Keywords.Contains(k) && 
-                                        (string.IsNullOrEmpty(NewKeyword) || k.Contains(NewKeyword, StringComparison.OrdinalIgnoreCase))))
-                                    {
-                                        <option value="@keyword" />
-                                    }
+                                    <option value="@keyword" />
                                 }
-                            </datalist>
-                        </div>
-
-                    @* Additional Information Section *@
-                    <div class="form-section">
-                        <h3>Additional Information</h3>
-                        <div class="form-row">
-                            <div class="form-field">
-                                <label for="pubPublisher">Publisher</label>
-                                <InputSelect @bind-Value="EditingPublication.PublisherID" id="pubPublisher">
-                                    <option value="">-- Select Publisher --</option>
-                                    @if (Publishers != null)
-                                    {
-                                        @foreach (var publisher in Publishers)
-                                        {
-                                            <option value="@publisher.PublisherID">@publisher.DisplayName</option>
-                                        }
-                                    }
-                                </InputSelect>
-                            </div>
-                            <div class="form-field">
-                                <label for="pubMediaType">Media Type</label>
-                                <InputSelect @bind-Value="EditingPublication.MediaTypeID" id="pubMediaType">
-                                    <option value="">-- Select Media Type --</option>
-                                    @if (MediaTypes != null)
-                                    {
-                                        @foreach (var mediaType in MediaTypes)
-                                        {
-                                            <option value="@mediaType.MediaTypeID">@mediaType.MediaType</option>
-                                        }
-                                    }
-                                </InputSelect>
-                            </div>
-                        </div>
+                            }
+                        </datalist>
                     </div>
+
+
 
                     <div class="modal-footer">
                         <button type="submit" class="btn-base btn-success" disabled="@IsSavingPublication">
@@ -894,7 +900,7 @@
     {
         Navigation.NavigateTo($"{Navigation.BaseUri}collection");
     }
-    private ClaimsPrincipal User { get; set; }
+    private ClaimsPrincipal? User { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -1076,12 +1082,21 @@
 
                 // Load dropdown data
                 AvailableAuthors = await PublicationService.GetAuthorsAsync();
+                Console.WriteLine($"=== AUTHORS: Loaded {AvailableAuthors?.Count ?? 0} authors");
+                if (AvailableAuthors?.Any() == true)
+                    Console.WriteLine($"First author: {AvailableAuthors.First().FullName}");
                 AvailableCategories = await PublicationService.GetGenresAsync();
+                if (AvailableCategories?.Any() == true)
+                    Console.WriteLine($"First category: {AvailableCategories.First().Genre}");
+
                 ApprovedKeywords = await PublicationService.GetAllKeywordsAsync();
                 Publishers = await PublicationService.GetPublishersAsync();
+                Console.WriteLine($"=== PUBLISHERS: Loaded {Publishers?.Count ?? 0} publishers");
+
                 MediaTypes = await PublicationService.GetMediaTypesAsync();
 
                 ShowEditPublicationModal = true;
+                StateHasChanged(); // Add this to force re-render
             }
         }
         catch (Exception ex)

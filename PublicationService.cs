@@ -110,7 +110,7 @@ namespace LTF_Library_V1.Services
                 throw;
             }
         }
-  
+
         public async Task<PublicationDetailDto?> GetPublicationDetailAsync(int publicationId)
         {
             try
@@ -170,33 +170,55 @@ namespace LTF_Library_V1.Services
                 throw;
             }
         }
-        public async Task<List<Publisher>> GetPublishersAsync()
+       public async Task<List<PublisherDto>> GetPublishersAsync()
         {
-            return await _context.Publishers.ToListAsync();
+            try
+            {
+                return await _context.Publishers
+                    .OrderBy(p => p.Publisher1)
+                    .Select(p => new PublisherDto
+                    {
+                        PublisherID = p.PublisherID,
+                        Publisher1 = p.Publisher1,
+                        PublisherGoogle = p.PublisherGoogle
+                    })
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting publishers");
+                throw;
+            }
         }
-
+      
         public async Task<List<CreatorDto>> GetAuthorsAsync()
         {
             try
             {
-                return await _context.Creators
-                    .Where(c => c.PublicationCreators.Any()) // Only authors with publications
-                    .OrderBy(c => c.CreatorLastName)
-                    .ThenBy(c => c.CreatorFirstName)
+                _logger.LogInformation("Starting GetAuthorsAsync...");
+                var count = await _context.Creators.CountAsync();
+                _logger.LogInformation($"Total creators in database: {count}");
+
+                var authors = await _context.Creators
+                    .OrderBy(c=> c.CreatorLastName)
+                    .ThenBy(c=> c.CreatorFirstName) 
                     .Select(c => new CreatorDto
                     {
                         CreatorID = c.CreatorID,
                         CreatorFirstName = c.CreatorFirstName,
                         CreatorMiddleName = c.CreatorMiddleName,
                         CreatorLastName = c.CreatorLastName,
-                        FullName = c.FullName,
-                        SortName = c.SortName
+                        FullName = $"{c.CreatorFirstName ?? "Unknown"} {c.CreatorLastName ?? "Unknown"}".Trim(),
+                        SortName = $"{c.CreatorLastName ?? "Unknown"} {c.CreatorFirstName ?? "Unknown"}".Trim()
                     })
                     .ToListAsync();
+
+                _logger.LogInformation($"GetAuthorsAsync completed - returned {authors.Count} authors");
+                return authors;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting authors");
+                _logger.LogError(ex, "Error in GetAuthorsAsync");
                 throw;
             }
         }
@@ -205,24 +227,53 @@ namespace LTF_Library_V1.Services
         {
             try
             {
-                return await _context.Genres
-                    .Where(g => g.PublicationGenres.Any()) // Only genres with publications
+                _logger.LogInformation("Starting GetGenresAsync...");
+
+                // Simplify the query first to test
+                var count = await _context.Genres.CountAsync();
+                _logger.LogInformation($"Total genres in database: {count}");
+
+                var genres = await _context.Genres
                     .OrderBy(g => g.SortOrder)
-                    .ThenBy(g => g.Genre1)
                     .Select(g => new GenreDto
                     {
                         GenreID = g.GenreID,
-                        Genre = g.Genre1!,
+                        Genre = g.Genre1 ?? "",
                         SortOrder = g.SortOrder
                     })
                     .ToListAsync();
+
+                _logger.LogInformation($"GetGenresAsync completed - returned {genres.Count} genres");
+                return genres;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting genres");
+                _logger.LogError(ex, "Error in GetGenresAsync");
                 throw;
             }
         }
+        //public async Task<List<GenreDto>> GetGenresAsync()
+        //{
+        //    try
+        //    {
+        //        return await _context.Genres
+        //            .Where(g => g.PublicationGenres.Any()) // Only genres with publications
+        //            .OrderBy(g => g.SortOrder)
+        //            .ThenBy(g => g.Genre1)
+        //            .Select(g => new GenreDto
+        //            {
+        //                GenreID = g.GenreID,
+        //                Genre = g.Genre1!,
+        //                SortOrder = g.SortOrder
+        //            })
+        //            .ToListAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error getting genres");
+        //        throw;
+        //    }
+        //}
 
         public async Task<List<MediaTypeDto>> GetMediaTypesAsync()
         {
@@ -309,7 +360,7 @@ namespace LTF_Library_V1.Services
             try
             {
                 var publication = await _context.Publications
-                    .AsNoTracking() // Add this to ensure fresh data
+                    .AsNoTracking() // Ensure fresh data
                     .Include(p => p.Publisher)
                     .Include(p => p.MediaType)
                     .Include(p => p.MediaCondition)
@@ -375,6 +426,7 @@ namespace LTF_Library_V1.Services
                 throw;
             }
         }
+
         public async Task<List<string>> GetKeywordsForPublicationAsync(int publicationId)
         {
             try
@@ -454,9 +506,12 @@ namespace LTF_Library_V1.Services
                       new SqlParameter("@PublicationID", publication.PublicationID),
                       new SqlParameter("@Keywords", keywordJson));
 
-                //await _context.SaveChangesAsync();
+                 
+
                 await transaction.CommitAsync();
+
                 _context.ChangeTracker.Clear();
+
                 // Fetch fresh data from database
                 var refreshedPublication = await GetPublicationForEditAsync(publicationDto.PublicationID);
 

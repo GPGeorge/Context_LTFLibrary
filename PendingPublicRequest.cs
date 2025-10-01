@@ -19,11 +19,25 @@
         {
             get; set;
         }
-        public string Status { get; set; } = string.Empty;
+        public string Status { get; set; } = "Pending"; // Pending, Approved, Denied, RequestingInfo
         public DateTime RequestDate
         {
             get; set;
         }
         public string RequestType { get; set; } = string.Empty;
+
+        // Optional: Additional fields for audit trail
+        public string? ProcessedBy
+        {
+            get; set;
+        }
+        public DateTime? ProcessedDate
+        {
+            get; set;
+        }
+        public string? AdminNotes
+        {
+            get; set;
+        }
     }
 }

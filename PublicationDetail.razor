@@ -255,7 +255,7 @@ else
 @if (ShowRequestModalFlag && Publication != null)
 {
     <div class="modal" @onclick="CloseRequestModal">
-        <div class="modal-content" @onclick:stopPropagation="true">
+        <div class="large-modal modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">Request Historical Material</h2>
                 <button class="close-btn" @onclick="CloseRequestModal">&times;</button>
