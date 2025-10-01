@@ -273,7 +273,14 @@
         <div class="request-queue">
             <div class="request-queue-header">
                 <h3>Edit Publications</h3>
-                <button @onclick="RefreshEditPubsData" class="btn-base btn-secondary">Refresh</button>  @*Add new mothod below*@
+                <button @onclick="RefreshEditPubsData" class="btn-base btn-secondary">Refresh</button>
+                <div class="request-queue-header">
+                    <h3>Edit Publications</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button @onclick="OpenAddNewPublicationModal" class="btn-base btn-primary">Add New Publication</button>
+                        <button @onclick="RefreshEditPubsData" class="btn-base btn-secondary">Refresh</button>
+                    </div>
+                </div>
             </div>
             <!-- Search Section -->
             <div class="publication-search-section">
@@ -328,7 +335,7 @@
                                 <td>@pub.PublisherName</td>
                                 <td>@pub.MediaTypeName</td>
                                 <td>
-                                    <button @onclick="@(() => EditPublication(pub.PublicationID))"
+                                    <button @onclick="@(() => OpenEditPublicationModal(pub.PublicationID))"
                                             class="action-btn approve-btn">
                                         Edit
                                     </button>
@@ -476,7 +483,7 @@
         <div class="modal" @onclick="CloseEditPublicationModal">
             <div class="large-modal modal-content" @onclick:stopPropagation="true">
                 <div class="modal-header">
-                    <h2 class="modal-title">Edit Publication</h2>
+                    <h2 class="modal-title">@(IsAddingNewPublication ? "Add New Publication" : "Edit Publication")</h2>
                     <button class="close-btn" @onclick="CloseEditPublicationModal">&times;</button>
                 </div>
 
@@ -676,10 +683,10 @@
                         <div class="selected-items-container">
                             @if (EditingPublication.SelectedAuthors != null && EditingPublication.SelectedAuthors.Any())
                             {
-                                <div class="selected-items">
+                                <div class="author-chips">
                                     @foreach (var author in EditingPublication.SelectedAuthors)
                                     {
-                                        <div class="selected-item">
+                                        <div class="author-chip">
                                             <span>@author.FullName</span>
                                             <button type="button" class="remove-btn" @onclick="() => RemoveAuthor(author.CreatorID)">
                                                 ×
@@ -718,10 +725,10 @@
                         <div class="selected-items-container">
                             @if (EditingPublication?.SelectedCategories != null && EditingPublication.SelectedCategories.Any())
                             {
-                                <div class="selected-items">
+                                <div class="category-chips">
                                     @foreach (var category in EditingPublication.SelectedCategories)
                                     {
-                                        <div class="selected-item">
+                                        <div class="category-chip">
                                             <span>@category.Genre</span>
                                             <button type="button" class="remove-btn" @onclick="() => RemoveCategory(category.GenreID)">
                                                 ×
@@ -798,10 +805,10 @@
                         <div class="selected-items-container">
                             @if (EditingPublication?.Keywords != null && EditingPublication.Keywords.Any())
                             {
-                                <div class="selected-items">
+                                <div class="keyword-chips">
                                     @foreach (var keyword in EditingPublication.Keywords)
                                     {
-                                        <div class="selected-item">
+                                        <div class="keyword-chip">
                                             <span>@keyword</span>
                                             <button type="button" class="remove-btn" @onclick="() => RemoveKeyword(keyword)">
                                                 ×
@@ -871,6 +878,7 @@
     private bool IsLoading = true;
     private bool IsLoadingUsers = false;
     private bool IsProcessing = false;
+    private bool IsAddingNewPublication = false;
     private PublicationSearchCriteria PublicationSearchCriteria = new();
     private List<PublicationSearchResult>? PublicationSearchResults;
     private List<CreatorDto>? Authors;
@@ -1104,6 +1112,42 @@
             await JSRuntime.InvokeVoidAsync("alert", $"Error loading publication: {ex.Message}");
         }
     }
+
+    private async Task OpenAddNewPublicationModal()
+    {
+        try
+        {
+            // Initialize a new empty publication
+            EditingPublication = new PublicationEditDto
+            {
+                PublicationTitle = string.Empty,
+                YearPublished = string.Empty,
+                ISBN = string.Empty,
+                Edition = string.Empty,
+                Comments = string.Empty,
+                SelectedAuthors = new List<CreatorDto>(),
+                SelectedCategories = new List<GenreDto>(),
+                Keywords = new List<string>(),
+                PublisherID = null,
+                MediaTypeID = null
+            };
+
+            // Load dropdown data
+            AvailableAuthors = await PublicationService.GetAuthorsAsync();
+            AvailableCategories = await PublicationService.GetGenresAsync();
+            ApprovedKeywords = await PublicationService.GetAllKeywordsAsync();
+            Publishers = await PublisherService.GetPublishersAsync();
+            MediaTypes = await PublicationService.GetMediaTypesAsync();
+
+            IsAddingNewPublication = true;
+            ShowEditPublicationModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error initializing new publication: {ex.Message}");
+        }
+    }
     private void HandleKeywordKeyDown(KeyboardEventArgs e)
 {
     if (e.Key == "Enter")
@@ -1119,6 +1163,14 @@
             EditingPublication = await PublicationService.GetPublicationForEditAsync(publicationId);
             if (EditingPublication != null)
             {
+                // Load dropdown data
+                AvailableAuthors = await PublicationService.GetAuthorsAsync();
+                AvailableCategories = await PublicationService.GetGenresAsync();
+                ApprovedKeywords = await PublicationService.GetAllKeywordsAsync();
+                Publishers = await PublisherService.GetPublishersAsync();
+                MediaTypes = await PublicationService.GetMediaTypesAsync();
+
+                IsAddingNewPublication = false;
                 ShowEditPublicationModal = true;
             }
             else
@@ -1215,6 +1267,7 @@
         ShowEditPublicationModal = false;
         EditingPublication = null;
         NewKeyword = string.Empty;
+        IsAddingNewPublication = false;   
         StateHasChanged();
     }
     private class RegisterModel
@@ -1258,21 +1311,23 @@
         IsSavingPublication = true;
         try
         {
-            var result = await PublicationService.UpdatePublicationAsync(EditingPublication);
+            ServiceResult result;
+
+            if (IsAddingNewPublication)
+            {
+                // Create new publication
+                result = await PublicationService.CreatePublicationAsync(EditingPublication);
+            }
+            else
+            {
+                // Update existing publication
+                result = await PublicationService.UpdatePublicationAsync(EditingPublication);
+            }
 
             if (result.Success)
             {
-                // Cast the Data property to PublicationEditDto and refresh the modal data
-                if (result.Data != null && result.Data is PublicationEditDto refreshedData)
-                {
-                    EditingPublication = refreshedData;
-
-
-                    // Force UI update
-                    StateHasChanged();
-                }
-
-                await JSRuntime.InvokeVoidAsync("alert", "Publication updated successfully!");
+                await JSRuntime.InvokeVoidAsync("alert",
+                    IsAddingNewPublication ? "Publication created successfully!" : "Publication updated successfully!");
                 CloseEditPublicationModal();
 
                 // Refresh the search results if they exist

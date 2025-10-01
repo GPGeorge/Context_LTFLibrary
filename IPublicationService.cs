@@ -13,6 +13,7 @@ namespace LTF_Library_V1.Services
         Task<PublicationRequestSubmissionDto> SubmitRequestAsync(PublicationRequestDto request);
         Task<PublicationEditDto?> GetPublicationForEditAsync(int publicationId);
         Task<ServiceResult> UpdatePublicationAsync(PublicationEditDto publication);
+        Task<ServiceResult> CreatePublicationAsync(PublicationEditDto publication);
         Task<List<string>> GetAllKeywordsAsync();
         Task<List<string>> GetKeywordsForPublicationAsync(int publicationId);
         Task<List<PublisherDto>> GetPublishersAsync();

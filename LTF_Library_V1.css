@@ -1655,12 +1655,30 @@
     border-radius: 4px;
 }
 
-.large-modal .modal-content
+.large-modal.modal-content
 {
-    max-width: 1200px;
-    width: 95vw;
+    max-width: 1400px;
+    width: 98vw;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;  
+}
+.large-modal .form-grid,
+.modal-content.large-modal .form-grid
+{
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    width: 100%;
+}
+
+.large-modal .form-field input,
+.large-modal .form-field select,
+.large-modal .form-field textarea,
+.modal-content.large-modal .form-field input,
+.modal-content.large-modal .form-field select,
+.modal-content.large-modal .form-field textarea
+{
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .no-items

@@ -533,7 +533,90 @@ namespace LTF_Library_V1.Services
             }
         }
         //to here
-       
+        //Here
+        public async Task<ServiceResult> CreatePublicationAsync(PublicationEditDto publicationDto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var publication = new Publication
+                {
+                
+                // Insert basic publication properties with scalar values
+                PublicationTitle = publicationDto.PublicationTitle,
+                CatalogNumber = publicationDto.CatalogNumber,
+                Comments = publicationDto.Comments,
+                CoverPhotoLink = publicationDto.CoverPhotoLink,
+                Edition = publicationDto.Edition,
+                ISBN = publicationDto.ISBN,
+                Volume = publicationDto.Volume,
+                NumberOfVolumes = publicationDto.NumberOfVolumes,
+                Pages = publicationDto.Pages,
+                YearPublished = publicationDto.YearPublished,
+                ConfidenceLevel = publicationDto.ConfidenceLevel,
+                ListPrice = publicationDto.ListPrice,
+                PublisherID = publicationDto.PublisherID,
+                MediaTypeID = publicationDto.MediaTypeID,
+                MediaConditionID = publicationDto.MediaConditionID,
+                ShelfID = publicationDto.ShelfID};
+
+                _context.Publications.Add(publication);
+
+                await _context.SaveChangesAsync();
+
+                // Add Authors using stored procedure
+                if (publicationDto.SelectedAuthors?.Any() == true)
+                {
+                    var authorIds = string.Join(",", publicationDto.SelectedAuthors.Select(a => a.CreatorID));
+                    await _context.Database.ExecuteSqlRawAsync(
+                        "EXEC sp_UpdatePublicationAuthors @PublicationID, @AuthorIDs",
+                        new SqlParameter("@PublicationID", publication.PublicationID),
+                        new SqlParameter("@AuthorIDs", authorIds));
+                }
+                // Add Categories using stored procedure
+                if (publicationDto.SelectedCategories?.Any() == true)
+                {
+                    var categoryIDs = string.Join(",", publicationDto.SelectedCategories.Select(c => c.GenreID));
+                    await _context.Database.ExecuteSqlRawAsync(
+                        "EXEC sp_UpdatePublicationCategories @PublicationID, @CategoryIDs",
+                        new SqlParameter("@PublicationID", publication.PublicationID),
+                        new SqlParameter("@CategoryIDs", categoryIDs));
+                }
+                // Add Keywords using stored procedure
+                if (publicationDto.Keywords?.Any() == true)
+                {
+                    var keywordJson = JsonSerializer.Serialize(publicationDto.Keywords.Where(k => !string.IsNullOrWhiteSpace(k)));
+                    await _context.Database.ExecuteSqlRawAsync(
+                        "EXEC sp_UpdatePublicationKeywords @PublicationID, @Keywords",
+                        new SqlParameter("@PublicationID", publication.PublicationID),
+                        new SqlParameter("@Keywords", keywordJson));
+                }
+
+                await transaction.CommitAsync();
+
+                _context.ChangeTracker.Clear();
+
+                // Fetch fresh data from database
+                var refreshedPublication = await GetPublicationForEditAsync(publicationDto.PublicationID);
+
+                if (refreshedPublication != null)
+                {
+                    return ServiceResult.Successful("Publication updated successfully.", refreshedPublication);
+                }
+                else
+                {
+                    // Still successful but couldn't get refreshed data
+                    return ServiceResult.Successful("Publication updated successfully.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error adding publication {PublicationId}", publicationDto.PublicationID);
+                return ServiceResult.Failed("An error occurred while updating the publication.");
+            }
+        }
+        //to here
 
         public async Task<PublicationRequestSubmissionDto> SubmitRequestAsync(PublicationRequestDto request)
         {
