@@ -41,6 +41,7 @@ https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Pu
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationRequest.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationSearchCriteria.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublicationTransfer.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublisherManagementModal.razor
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/PublisherService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/RequestDtos.cs
@@ -53,4 +54,5 @@ https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Us
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/UserService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/web.config
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/WhoAmIResult.cs
+
 
