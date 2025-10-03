@@ -16,6 +16,7 @@ https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Er
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Error.cshtml.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/ICreatorService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IGenreService.cs
+https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IMasterListService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IPublicationService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IPublisherService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/IRequestManagementService.cs
@@ -56,6 +57,7 @@ https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/Us
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/UserService.cs
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/web.config
 https://raw.githubusercontent.com/GPGeorge/Context_LTFLibrary/refs/heads/main/WhoAmIResult.cs
+
 
 
 
