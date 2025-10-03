@@ -79,6 +79,7 @@ builder.Services.AddScoped<IRequestService, RequestService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRequestManagementService, RequestManagementService>();
 builder.Services.AddScoped<IPublisherService, PublisherService>();
+builder.Services.AddScoped<IMasterListService, MasterListService>();
 
 // Add HttpContextAccessor for accessing current user in services
 builder.Services.AddHttpContextAccessor();

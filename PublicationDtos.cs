@@ -423,7 +423,6 @@ namespace LTF_Library_V1.DTOs
             {
                 get; set;
             }
-
             public string DisplayName =>
                 !string.IsNullOrEmpty(PublisherGoogle) && Publisher1 != PublisherGoogle
                     ? $"{Publisher1} ({PublisherGoogle})"

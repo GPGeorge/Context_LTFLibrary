@@ -42,6 +42,14 @@ namespace LTF_Library_V1.Data
         {
             get; set;
         }
+        public DbSet<Participant> Participants
+        {
+            get; set;
+        }
+        public DbSet<PublicationTransfer> PublicationTransfers
+        {
+            get; set;
+        }
         public DbSet<PublicationCreator> PublicationCreators
         {
             get; set;
@@ -62,6 +70,7 @@ namespace LTF_Library_V1.Data
         {
             get; set;
         }
+     
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -100,6 +109,12 @@ namespace LTF_Library_V1.Data
             modelBuilder.Entity<Shelf>(entity =>
             {
                 entity.Property(e => e.Shelf1).HasColumnName("Shelf");
+            });
+            // Configure ParticipantStatus entity (column name mapping)
+            modelBuilder.Entity<ParticipantStatus>(entity =>
+            {
+                entity.Property(e => e.ParticipantStatusID).HasColumnName("ParticipantStatusID");
+                entity.Property(e => e.ParticipantStatus1).HasColumnName("ParticipantStatus");
             });
             // Configure the view
             modelBuilder.Entity<PendingPublicRequest>(entity =>

@@ -1,0 +1,582 @@
+﻿@page "/masterlists"
+@using LTF_Library_V1.DTOs
+@using LTF_Library_V1.Services
+@using Microsoft.AspNetCore.Authorization
+@inject IMasterListService MasterListService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Master Lists - Lander Trail Foundation</PageTitle>
+
+<div class="admin-dashboard">
+    <div class="admin-header">
+        <h1 class="admin-title">Master Lists Management</h1>
+        <div>
+            <a href="/admin" class="btn-base btn-secondary">Back to Admin</a>
+        </div>
+    </div>
+
+    <div class="admin-nav">
+        <div class="admin-nav-links" style="flex-wrap: wrap; gap: 5px;">
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("Bookcase"))"
+               class="admin-nav-link @(ActiveTable == "Bookcase" ? "active" : "")">
+                Bookcases
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("Creator"))"
+               class="admin-nav-link @(ActiveTable == "Creator" ? "active" : "")">
+                Authors
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("Genre"))"
+               class="admin-nav-link @(ActiveTable == "Genre" ? "active" : "")">
+                Categories
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("Publisher"))"
+               class="admin-nav-link @(ActiveTable == "Publisher" ? "active" : "")">
+                Publishers
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("MediaType"))"
+               class="admin-nav-link @(ActiveTable == "MediaType" ? "active" : "")">
+                Media Types
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("MediaCondition"))"
+               class="admin-nav-link @(ActiveTable == "MediaCondition" ? "active" : "")">
+                Media Condition
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("Participant"))"
+               class="admin-nav-link @(ActiveTable == "Participant" ? "active" : "")">
+                Participants
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("ParticipantStatus"))"
+               class="admin-nav-link @(ActiveTable == "ParticipantStatus" ? "active" : "")">
+                Participant Status
+            </a>
+            <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("Shelf"))"
+               class="admin-nav-link @(ActiveTable == "Shelf" ? "active" : "")">
+                Shelves
+            </a>
+        </div>
+    </div>
+
+    <div class="request-queue">
+        <div class="request-queue-header">
+            <h3>@GetTableDisplayName()</h3>
+            <div>
+                <button @onclick="ShowAddModal" class="btn-base btn-primary">Add New</button>
+                <button @onclick="RefreshData" class="btn-base btn-secondary">Refresh</button>
+            </div>
+        </div>
+
+        @if (IsLoading)
+        {
+            <div style="padding: 40px; text-align: center;">
+                <p>Loading...</p>
+            </div>
+        }
+        else if (Items?.Any() == true)
+        {
+            <table class="request-table">
+                <thead>
+                    <tr>
+                        @if (ActiveTable == "Creator" )
+                        {
+                            <th>First Name</th>
+                            <th>Middle Name</th>
+                            <th>Last Name</th>
+                            <th>Full Name</th>
+                        }
+                        else if (ActiveTable == "Participant")
+                        {
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Full Name</th>
+                        }
+                        else if (ActiveTable == "Publisher")
+                        {
+                            <th>Publisher Name</th>
+                            <th>Publisher Name (Google version)</th>
+                        }
+                        else if (ActiveTable == "Shelf")
+                        {
+                            <th>Shelf Name</th>
+                            <th>Bookcase</th>
+                            <th>Shelf Description</th>
+                        }
+                        else if (ActiveTable == "Bookcase")
+                        {
+                            <th>Bookcase Name</th>
+                            <th>Shelf Description</th>
+                        }
+                        else
+                        {
+                            <th>Name</th>
+                            <th>Sort Order</th>
+                        }
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Items)
+                    {
+                        <tr>
+                            @if (ActiveTable == "Creator")
+                            {
+                                var creator = Creators?.FirstOrDefault(c => c.CreatorID == item.Id);
+                                <td>@creator?.CreatorFirstName</td>
+                                <td>@creator?.CreatorMiddleName</td>
+                                <td>@creator?.CreatorLastName</td>
+                                <td>@creator?.FullName</td>
+                            }
+                            else if (ActiveTable == "Participant")
+                            {
+                                var participant = Participants?.FirstOrDefault(p => p.ParticipantID == item.Id);
+                                <td>@participant?.ParticipantFirstName</td>
+                                <td>@participant?.ParticipantLastName</td>
+                                <td>@participant?.AlsoKnownAs</td>
+                                <td>@participant?.FullName</td>
+                            }
+                            else if (ActiveTable == "Publisher")
+                            {
+                                var publisher = Publishers?.FirstOrDefault(p => p.PublisherID == item.Id);
+                                <td>@publisher?.Publisher1</td>
+                                <td>@publisher?.PublisherGoogle</td>
+                            }
+                            else if (ActiveTable == "Shelf")
+                            {
+                                var shelf = Shelves?.FirstOrDefault(s => s.ShelfID == item.Id);
+                                <td>@shelf?.Shelf1</td>
+                                <td>@shelf?.Bookcase1</td>
+                                <td>@shelf?.ShelfDescription</td>
+                            }
+                            else if (ActiveTable == "Bookcase")
+                            {
+                                var bookcase = Bookcases?.FirstOrDefault(b => b.BookcaseID == item.Id);
+                                <td>@bookcase?.Bookcase1</td>
+                                <td>@bookcase?.BookcaseDescription</td>
+                            }
+                            else
+                            {
+                                <td>@item.Name</td>
+                                <td>@item.SortOrder</td>
+                            }
+                            <td>
+                                <div class="request-actions">
+                                    <button @onclick="@(() => ShowEditModal(item))" class="action-btn info-btn">
+                                        Edit
+                                    </button>
+                                    <button @onclick="@(() => DeleteItem(item.Id))" class="action-btn deny-btn">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div style="padding: 40px; text-align: center; color: #666;">
+                <p>No items found. Click "Add New" to create one.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+@if (ShowModal)
+{
+    <div class="modal" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">@(IsEditMode ? "Edit" : "Add") @GetTableDisplayName()</h2>
+                <button class="close-btn" @onclick="CloseModal">&times;</button>
+            </div>
+
+            <div class="processing-form">
+                @if (ActiveTable == "Creator" || ActiveTable == "Participant")
+                {
+                    <div class="form-field">
+                        <label>First Name:</label>
+                        <input type="text" @bind="EditItem.AdditionalField1" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label>Middle Name:</label>
+                        <input type="text" @bind="EditItem.AdditionalField2" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label>Last Name:</label>
+                        <input type="text" @bind="EditItem.AdditionalField3" class="form-control" />
+                    </div>
+                }
+                else if (ActiveTable == "Publisher")
+                {
+                    <div class="form-field">
+                        <label>Publisher Name:<span style="color: red;">*</span></label>
+                        <input type="text" @bind="EditItem.Name" class="form-control" required />
+                    </div>
+                    <div class="form-field">
+                        <label>Publisher Name (Google version):</label>
+                        <input type="text" @bind="EditItem.AdditionalField1" class="form-control" />
+                    </div>
+                }
+                else if (ActiveTable == "Shelf")
+                {
+                    <div class="form-field">
+                        <label>Shelf Name:<span style="color: red;">*</span></label>
+                        <input type="text" @bind="EditItem.Name" class="form-control" required />
+                    </div>
+                    <div class="form-field">
+                        <label>Bookcase:</label>
+                        <select @bind="EditItem.AdditionalField1" class="form-control">
+                            <option value="">-- Select Bookcase --</option>
+                            @foreach (var bookcase in Bookcases ?? new List<BookcaseDto>())
+                            {
+                                <option value="@bookcase.BookcaseID">@bookcase.Bookcase1</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Description:</label>
+                        <input type="number" @bind="EditItem.AdditionalField2" class="form-control" />
+                    </div>
+                }
+                else
+                {
+                    <div class="form-field">
+                        <label>Name:<span style="color: red;">*</span></label>
+                        <input type="text" @bind="EditItem.Name" class="form-control" required />
+                    </div>
+                    <div class="form-field">
+                        <label>Sort Order:</label>
+                        <input type="number" @bind="EditItem.SortOrder" class="form-control" />
+                    </div>
+                }
+
+                <div style="text-align: center; margin-top: 25px;">
+                    <button @onclick="SaveItem" class="btn-base btn-success" disabled="@IsSaving">
+                        @if (IsSaving)
+                        {
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>@(IsEditMode ? "Update" : "Add")</span>
+                        }
+                    </button>
+                    <button @onclick="CloseModal" class="btn-base btn-secondary" style="margin-left: 10px;" disabled="@IsSaving">
+                        Cancel
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div style="margin-top: 15px; padding: 10px; background-color: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c33;">
+                        @ErrorMessage
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string ActiveTable = "Bookcase";
+    private bool IsLoading = true;
+    private bool IsSaving = false;
+    private bool ShowModal = false;
+    private bool IsEditMode = false;
+    private string ErrorMessage = string.Empty;
+
+    private List<MasterListItemDto>? Items;
+    private MasterListItemDto EditItem = new();
+
+    // Specific data for complex tables
+    private List<BookcaseDto>? Bookcases;
+    private List<CreatorDto>? Creators;
+    private List<PublisherDto>? Publishers;
+    private List<ParticipantDto>? Participants;
+    private List<ShelfDto>? Shelves;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task SetActiveTable(string tableName)
+    {
+        ActiveTable = tableName;
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        try
+        {
+            Items = null;
+
+            switch (ActiveTable)
+            {
+                case "Bookcase":
+                    Bookcases = await MasterListService.GetBookcasesAsync();
+                    Items = Bookcases.Select(b => new MasterListItemDto
+                    {
+                        Id = b.BookcaseID,
+                        Name = b.Bookcase1,
+                        AdditionalField1= b.BookcaseDescription
+                    }).ToList();
+                    break;
+
+                case "Creator":
+                    Creators = await MasterListService.GetCreatorsAsync();
+                    Items = Creators.Select(c => new MasterListItemDto
+                    {
+                        Id = c.CreatorID,
+                        Name = c.FullName
+                    }).ToList();
+                    break;
+
+                case "Genre":
+                    Items = await MasterListService.GetItemsAsync("Genre");
+                    break;
+
+                case "Publisher":
+                    Publishers = await MasterListService.GetPublishersAsync();
+                    Items = Publishers.Select(p => new MasterListItemDto
+                    {
+                        Id = p.PublisherID,
+                        Name = p.Publisher1,
+                        AdditionalField1 = p.PublisherGoogle
+                    }).ToList();
+                    break;
+
+                case "MediaType":
+                    Items = await MasterListService.GetItemsAsync("MediaType");
+                    break;
+
+                case "MediaCondition":
+                    Items = await MasterListService.GetItemsAsync("MediaCondition");
+                    break;
+
+                case "Participant":
+                    Participants = await MasterListService.GetParticipantsAsync();
+                    Items = Participants.Select(p => new MasterListItemDto
+                    {
+                        Id = p.ParticipantID,
+                        Name = p.FullName
+                    }).ToList();
+                    break;
+
+                case "ParticipantStatus":
+                    Items = await MasterListService.GetItemsAsync("ParticipantStatus");
+                    break;
+
+                case "Shelf":
+                    Shelves = await MasterListService.GetShelvesAsync();
+                    Bookcases = await MasterListService.GetBookcasesAsync();
+                    Items = Shelves.Select(s => new MasterListItemDto
+                    {
+                        Id = s.ShelfID,
+                        Name = s.Shelf1,
+                        AdditionalField1 = s.BookcaseID?.ToString(),
+                        SortOrder = s.SortOrder
+                    }).ToList();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadData();
+    }
+
+    private void ShowAddModal()
+    {
+        IsEditMode = false;
+        EditItem = new MasterListItemDto();
+        ErrorMessage = string.Empty;
+        ShowModal = true;
+    }
+
+    private void ShowEditModal(MasterListItemDto item)
+    {
+        IsEditMode = true;
+        ErrorMessage = string.Empty;
+
+        // Load the full item details based on table type
+        if (ActiveTable == "Creator")
+        {
+            var creator = Creators?.FirstOrDefault(c => c.CreatorID == item.Id);
+            EditItem = new MasterListItemDto
+            {
+                Id = item.Id,
+                AdditionalField1 = creator?.CreatorFirstName,
+                AdditionalField2 = creator?.CreatorMiddleName,
+                AdditionalField3 = creator?.CreatorLastName
+            };
+        }
+        else if (ActiveTable == "Participant")
+        {
+            var participant = Participants?.FirstOrDefault(p => p.ParticipantID == item.Id);
+            EditItem = new MasterListItemDto
+            {
+                Id = item.Id,
+                AdditionalField1 = participant?.ParticipantFirstName,
+                AdditionalField2 = participant?.ParticipantLastName,
+                AdditionalField3 = participant?.AlsoKnownAs
+            };
+        }
+        else if (ActiveTable == "Publisher")
+        {
+            var publisher = Publishers?.FirstOrDefault(p => p.PublisherID == item.Id);
+            EditItem = new MasterListItemDto
+            {
+                Id = item.Id,
+                Name = publisher?.Publisher1 ?? "",
+                AdditionalField1 = publisher?.PublisherGoogle                
+            };
+        }
+        else if (ActiveTable == "Shelf")
+        {
+            var shelf = Shelves?.FirstOrDefault(s => s.ShelfID == item.Id);
+            EditItem = new MasterListItemDto
+            {
+                Id = item.Id,
+                Name = shelf?.Shelf1 ?? "",
+                AdditionalField1 = shelf?.BookcaseID?.ToString(),
+                SortOrder = shelf?.SortOrder
+            };
+        }
+        else
+        {
+            EditItem = new MasterListItemDto
+            {
+                Id = item.Id,
+                Name = item.Name,
+                SortOrder = item.SortOrder
+            };
+        }
+
+        ShowModal = true;
+    }
+
+    private void CloseModal()
+    {
+        ShowModal = false;
+        EditItem = new();
+        ErrorMessage = string.Empty;
+    }
+
+    private async Task SaveItem()
+    {
+        IsSaving = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            // Validation
+            if (ActiveTable != "Creator" && ActiveTable != "Participant" && string.IsNullOrWhiteSpace(EditItem.Name))
+            {
+                ErrorMessage = "Name is required.";
+                IsSaving = false;
+                return;
+            }
+
+            OperationResultDto result;
+
+            // Special handling for complex tables
+            if (ActiveTable == "Creator" || ActiveTable == "Participant" || ActiveTable == "Publisher" || ActiveTable == "Shelf")
+            {
+                // These tables need custom service methods - for now show a message
+                await JSRuntime.InvokeVoidAsync("alert",
+                    $"Full CRUD operations for {GetTableDisplayName()} require additional implementation in the service layer. " +
+                    "This is a complex table with multiple fields.");
+                IsSaving = false;
+                return;
+            }
+            else
+            {
+                // Simple tables with Name and SortOrder
+                if (IsEditMode)
+                {
+                    result = await MasterListService.UpdateItemAsync(ActiveTable, EditItem);
+                }
+                else
+                {
+                    result = await MasterListService.AddItemAsync(ActiveTable, EditItem);
+                }
+
+                if (result.Success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", result.Message);
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ErrorMessage = result.Message;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error saving item: {ex.Message}";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task DeleteItem(int itemId)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete this {GetTableDisplayName()}?"))
+        {
+            try
+            {
+                var result = await MasterListService.DeleteItemAsync(ActiveTable, itemId);
+
+                if (result.Success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", result.Message);
+                    await LoadData();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", result.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting item: {ex.Message}");
+            }
+        }
+    }
+
+    private string GetTableDisplayName()
+    {
+        return ActiveTable switch
+        {
+            "Bookcase" => "Bookcases",
+            "Creator" => "Authors",
+            "Genre" => "Categories",
+            "Publisher" => "Publishers",
+            "MediaType" => "Media Types",
+            "MediaCondition" => "Media Conditions",
+            "Participant" => "Participants",
+            "ParticipantStatus" => "Participant Status",
+            "Shelf" => "Shelves",
+            _ => ActiveTable
+        };
+    }
+}

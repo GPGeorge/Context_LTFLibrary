@@ -55,11 +55,11 @@ namespace LTF_Library_V1.Data.Models
         [StringLength(50)]
         public string Status { get; set; } = "Pending";
 
-       
+        // New fields for admin processing
         public string? ProcessedBy
         {
             get; set;
-        }  
+        }  // Foreign key to AspNetUsers.Id
 
         public DateTime? ProcessedDate
         {
@@ -85,5 +85,4 @@ namespace LTF_Library_V1.Data.Models
             get; set;
         }
     }
-
 }

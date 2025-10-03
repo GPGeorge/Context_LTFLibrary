@@ -272,6 +272,34 @@ namespace LTF_Library_V1.Data.Models
         public virtual ICollection<Publication> Publications { get; set; } = new List<Publication>();
     }
 
+    [Table("tblParticipantStatus")]
+    public class ParticipantStatus
+    {
+        [Key]
+        public int ParticipantStatusID
+        {
+            get; set;
+        }
+        [Column("ParticipantStatus")] 
+        [MaxLength(255)]
+        public string? ParticipantStatus1
+        {
+            get; set;
+        }
+        [MaxLength(100)]
+        public string? ExtendedDescription
+        {
+            get; set;
+        }
+        public int? SortOrder
+        {
+            get; set;
+        }
+
+        public virtual ICollection<ParticipantStatus> ParticipantStatuses { get; set; } = new List<ParticipantStatus>();
+    }
+
+
     [Table("tblBookcase")]
     public class Bookcase
     {
@@ -282,7 +310,7 @@ namespace LTF_Library_V1.Data.Models
         }
 
         [MaxLength(50)]
-        public string? Bookcase1
+        public string Bookcase1
         {
             get; set;
         }
