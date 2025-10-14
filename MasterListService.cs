@@ -1,6 +1,7 @@
 ﻿using LTF_Library_V1.Data;
 using LTF_Library_V1.DTOs;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol;
 
 namespace LTF_Library_V1.Services
 {
@@ -184,8 +185,7 @@ namespace LTF_Library_V1.Services
         {
             return await _context.Set<Data.Models.Shelf>()
                 .Include(s => s.Bookcase)
-                .OrderBy(s => s.Bookcase.BookcaseDescription )
-                .ThenBy(s => s.Bookcase.Bookcase1)
+                .OrderBy(s => s.Bookcase.Bookcase1 )
                 .ThenBy(s => s.Shelf1)
                 .Select(s => new ShelfDto
                 {
@@ -224,6 +224,16 @@ namespace LTF_Library_V1.Services
                         _context.Set<Data.Models.Bookcase>().Add(bookcase);
                         await _context.SaveChangesAsync();
                         return new OperationResultDto { Success = true, Message = "Bookcase added successfully.", AffectedId = bookcase.BookcaseID };
+                    
+                    case "Shelf":
+                        var shelf = new Data.Models.Shelf
+                        {
+                            Shelf1 = item.Name,
+                            ShelfDescription = item.AdditionalField1
+                        };
+                        _context.Set<Data.Models.Shelf>().Add(shelf);
+                        await _context.SaveChangesAsync();
+                        return new OperationResultDto { Success = true, Message = "Bookcase added successfully.", AffectedId = shelf.ShelfID };
 
                     case "Genre":
                         var genre = new Data.Models.Genre
@@ -419,9 +429,19 @@ namespace LTF_Library_V1.Services
                         var bookcase = await _context.Set<Data.Models.Bookcase>().FindAsync(item.Id);
                         if (bookcase == null) return new OperationResultDto { Success = false, Message = "Bookcase not found." };
                         bookcase.Bookcase1 = item.Name;
-                        //bookcase.BookcaseDescription = item.BookcaseDescription;
+                        bookcase.BookcaseDescription = item.AdditionalField1;
                         await _context.SaveChangesAsync();
                         return new OperationResultDto { Success = true, Message = "Bookcase updated successfully." };
+
+                    case "Shelf":
+                        var shelf = await _context.Set<Data.Models.Shelf>().FindAsync(item.Id);
+                        if (shelf == null)
+                            return new OperationResultDto { Success = false, Message = "Shelf not found." };
+                        shelf.Shelf1 = item.Name;
+                        shelf.BookCaseID = item?.RelatedId ?? shelf.BookCaseID;
+                        shelf.ShelfDescription = item?.AdditionalField1;
+                        await _context.SaveChangesAsync();
+                        return new OperationResultDto { Success = true, Message = "Shelf updated successfully." };
 
                     case "Genre":
                         var genre = await _context.Set<Data.Models.Genre>().FindAsync(item.Id);
@@ -568,7 +588,6 @@ namespace LTF_Library_V1.Services
                 {
                     return new OperationResultDto { Success = false, Message = "A shelf with this name already exists in this bookcase." };
                 }
-
                 existing.Shelf1 = shelf.Shelf1;
                 existing.BookCaseID = shelf.BookcaseID;
                 existing.ShelfDescription = shelf.ShelfDescription;

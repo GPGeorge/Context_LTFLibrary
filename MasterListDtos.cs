@@ -10,6 +10,10 @@ namespace LTF_Library_V1.DTOs
             get; set;
         }
         public string Name { get; set; } = string.Empty;
+        public int ? RelatedId
+        {
+            get; set;
+        }
         public int? SortOrder
         {
             get; set;
@@ -142,10 +146,6 @@ namespace LTF_Library_V1.DTOs
             get; set;
         }
         public string? ShelfDescription
-        {
-            get; set;
-        }
-        public int? SortOrder
         {
             get; set;
         }

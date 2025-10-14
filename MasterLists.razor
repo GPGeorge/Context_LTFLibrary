@@ -13,7 +13,7 @@
     <div class="admin-header">
         <h1 class="admin-title">Master Lists Management</h1>
         <div>
-            <a href="/admin" class="btn-base btn-secondary">Back to Admin</a>
+            <a href="admin" class="btn-base btn-secondary">Back to Admin</a>
         </div>
     </div>
 
@@ -105,7 +105,7 @@
                         else if (ActiveTable == "Bookcase")
                         {
                             <th>Bookcase Name</th>
-                            <th>Shelf Description</th>
+                            <th>Bookcase Description</th>
                         }
                         else
                         {
@@ -237,8 +237,19 @@
                         </select>
                     </div>
                     <div class="form-field">
-                        <label>Description:</label>
-                        <input type="number" @bind="EditItem.AdditionalField2" class="form-control" />
+                        <label>Shelf Description:</label>
+                        <input type="number" @bind="EditItem.AdditionalField1" class="form-control" />
+                    </div>
+                }
+                else if (ActiveTable == "Bookcase")
+                {
+                    <div class="form-field">
+                        <label>Bookcase:<span style="color: red;">*</span></label>
+                        <input type="text" @bind="EditItem.Name" class="form-control" required />
+                    </div>
+                    <div class="form-field">
+                        <label>Bookcase Description:</label>
+                        <input type="text" @bind="EditItem.AdditionalField1" class="form-control" />
                     </div>
                 }
                 else
@@ -379,8 +390,8 @@
                     {
                         Id = s.ShelfID,
                         Name = s.Shelf1,
-                        AdditionalField1 = s.BookcaseID?.ToString(),
-                        SortOrder = s.SortOrder
+                        RelatedId = s.BookcaseID ,
+                        AdditionalField1= s.ShelfDescription
                     }).ToList();
                     break;
             }
@@ -449,12 +460,22 @@
         else if (ActiveTable == "Shelf")
         {
             var shelf = Shelves?.FirstOrDefault(s => s.ShelfID == item.Id);
-            EditItem = new MasterListItemDto
+            EditItem = new  MasterListItemDto
             {
                 Id = item.Id,
                 Name = shelf?.Shelf1 ?? "",
-                AdditionalField1 = shelf?.BookcaseID?.ToString(),
-                SortOrder = shelf?.SortOrder
+                RelatedId = shelf?.BookcaseID,
+                AdditionalField1 = shelf?.ShelfDescription 
+            };
+        }
+        else if (ActiveTable == "Bookcase")
+        {
+            var bookcase = Bookcases?.FirstOrDefault(b => b.BookcaseID == item.Id);
+            EditItem = new MasterListItemDto
+            {
+                Id = item.Id,
+                Name = bookcase?.Bookcase1 ?? "",
+                AdditionalField1 = bookcase?.BookcaseDescription?.ToString()
             };
         }
         else
@@ -495,7 +516,7 @@
             OperationResultDto result;
 
             // Special handling for complex tables
-            if (ActiveTable == "Creator" || ActiveTable == "Participant" || ActiveTable == "Publisher" || ActiveTable == "Shelf")
+            if (ActiveTable == "Creator" || ActiveTable == "Participant" || ActiveTable == "Publisher" )
             {
                 // These tables need custom service methods - for now show a message
                 await JSRuntime.InvokeVoidAsync("alert",
