@@ -89,7 +89,7 @@
                         {
                             <th>First Name</th>
                             <th>Last Name</th>
-                            <th>Full Name</th>
+                            <th>Also Known As</th>
                         }
                         else if (ActiveTable == "Publisher")
                         {
@@ -133,7 +133,6 @@
                                 <td>@participant?.ParticipantFirstName</td>
                                 <td>@participant?.ParticipantLastName</td>
                                 <td>@participant?.AlsoKnownAs</td>
-                                <td>@participant?.FullName</td>
                             }
                             else if (ActiveTable == "Publisher")
                             {
@@ -201,11 +200,11 @@
                         <input type="text" @bind="EditItem.AdditionalField1" class="form-control" />
                     </div>
                     <div class="form-field">
-                        <label>Middle Name:</label>
+                        <label>Last Name:</label>
                         <input type="text" @bind="EditItem.AdditionalField2" class="form-control" />
                     </div>
                     <div class="form-field">
-                        <label>Last Name:</label>
+                        <label>Also Known As:</label>
                         <input type="text" @bind="EditItem.AdditionalField3" class="form-control" />
                     </div>
                 }
@@ -228,7 +227,7 @@
                     </div>
                     <div class="form-field">
                         <label>Bookcase:</label>
-                        <select @bind="EditItem.AdditionalField1" class="form-control">
+                        <select @bind="EditItem.RelatedId" class="form-control">
                             <option value="">-- Select Bookcase --</option>
                             @foreach (var bookcase in Bookcases ?? new List<BookcaseDto>())
                             {
@@ -238,7 +237,7 @@
                     </div>
                     <div class="form-field">
                         <label>Shelf Description:</label>
-                        <input type="number" @bind="EditItem.AdditionalField1" class="form-control" />
+                        <input type="text" @bind="EditItem.AdditionalField1" class="form-control" />
                     </div>
                 }
                 else if (ActiveTable == "Bookcase")
@@ -497,7 +496,6 @@
         EditItem = new();
         ErrorMessage = string.Empty;
     }
-
     private async Task SaveItem()
     {
         IsSaving = true;
@@ -515,16 +513,162 @@
 
             OperationResultDto result;
 
-            // Special handling for complex tables
-            if (ActiveTable == "Creator" || ActiveTable == "Participant" || ActiveTable == "Publisher" )
+            // // Special handling for complex tables
+            // if ( ActiveTable == "something not handled")
+            // {
+            //     // These tables need custom service methods
+            //     await JSRuntime.InvokeVoidAsync("alert",
+            //         $"Full CRUD operations for {GetTableDisplayName()} require additional implementation in the service layer. " +
+            //         "This is a complex table with multiple fields.");
+            //     IsSaving = false;
+            //     return;
+            // }
+            // else 
+            
+            if (ActiveTable == "Shelf")
             {
-                // These tables need custom service methods - for now show a message
-                await JSRuntime.InvokeVoidAsync("alert",
-                    $"Full CRUD operations for {GetTableDisplayName()} require additional implementation in the service layer. " +
-                    "This is a complex table with multiple fields.");
-                IsSaving = false;
-                return;
+                // Shelf uses specific service methods
+                if (IsEditMode)
+                {
+                    var shelfDto = new ShelfDto
+                    {
+                        ShelfID = EditItem.Id,
+                        Shelf1 = EditItem.Name,
+                        BookcaseID = EditItem.RelatedId,
+                        ShelfDescription = EditItem.AdditionalField1
+                    };
+                    result = await MasterListService.UpdateShelfAsync(shelfDto);
+                }
+                else
+                {
+                    var shelfDto = new ShelfDto
+                    {
+                        Shelf1 = EditItem.Name,
+                        BookcaseID = EditItem.RelatedId,
+                        ShelfDescription = EditItem.AdditionalField1
+                    };
+                    result = await MasterListService.AddShelfAsync(shelfDto);
+                }
+
+                if (result.Success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", result.Message);
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ErrorMessage = result.Message;
+                }
             }
+            //new stuff on my own
+            else if (ActiveTable == "Creator")
+            {
+                // Creator uses specific service methods
+                if (IsEditMode)
+                {
+                    var CreatorDto = new CreatorDto
+                    {
+                        CreatorID = EditItem.Id,
+                        CreatorFirstName = EditItem.AdditionalField1,
+                        CreatorMiddleName = EditItem.AdditionalField2,
+                        CreatorLastName = EditItem.AdditionalField3
+                    };
+                    result = await MasterListService.UpdateCreatorAsync(CreatorDto);
+                }
+                else
+                {
+                    var CreatorDto = new CreatorDto
+                    {
+                        CreatorFirstName = EditItem.AdditionalField1,
+                        CreatorMiddleName = EditItem.AdditionalField2,
+                        CreatorLastName = EditItem.AdditionalField3
+                    };
+                    result = await MasterListService.AddCreatorAsync(CreatorDto);
+                }
+
+                if (result.Success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", result.Message);
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ErrorMessage = result.Message;
+                }
+            }
+            else if (ActiveTable == "Participant")
+            {
+                // Participant uses specific service methods
+                if (IsEditMode)
+                {
+                    var ParticipantDto = new ParticipantDto
+                    {
+                        ParticipantID = EditItem.Id,
+                        ParticipantFirstName = EditItem.AdditionalField1,
+                        ParticipantLastName = EditItem.AdditionalField2,
+                        AlsoKnownAs = EditItem.AdditionalField3
+                    };
+                    result = await MasterListService.UpdateParticipantAsync(ParticipantDto);
+                }
+                else
+                {
+                    var ParticipantDto = new ParticipantDto
+                    {
+                        ParticipantFirstName = EditItem.AdditionalField1,
+                        ParticipantLastName = EditItem.AdditionalField2 ,
+                        AlsoKnownAs = EditItem.AdditionalField3
+                    };
+                    result = await MasterListService.AddParticipantAsync(ParticipantDto);
+                }
+
+                if (result.Success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", result.Message);
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ErrorMessage = result.Message;
+                }
+            }
+            else if (ActiveTable == "Publisher")
+            {
+                // Publisher uses specific service methods
+                if (IsEditMode)
+                {
+                    var PublisherDto = new PublisherDto
+                    {
+                        PublisherID = EditItem.Id,
+                        Publisher1 = EditItem.Name,
+                        PublisherGoogle = EditItem.AdditionalField1 
+                    };
+                    result = await MasterListService.UpdatePublisherAsync(PublisherDto);
+                }
+                else
+                {
+                    var PublisherDto = new PublisherDto
+                    {
+                        Publisher1 = EditItem.Name,
+                        PublisherGoogle = EditItem.AdditionalField1 
+                    };
+                    result = await MasterListService.AddPublisherAsync(PublisherDto);
+                }
+
+                if (result.Success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", result.Message);
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ErrorMessage = result.Message;
+                }
+            }
+            // end new stuff
             else
             {
                 // Simple tables with Name and SortOrder
@@ -558,6 +702,7 @@
             IsSaving = false;
         }
     }
+    
 
     private async Task DeleteItem(int itemId)
     {

@@ -27,7 +27,14 @@ namespace LTF_Library_V1.Services
                     Name = b.Bookcase1,
                     SortOrder = b.BookcaseID
                 }).ToList(),
-                
+                "Shelf" => ( await GetShelvesAsync() ).Select(s => new MasterListItemDto
+                {
+                    Id = s.ShelfID,
+                    Name = s.Shelf1,
+                    RelatedId = s.BookcaseID,
+                    AdditionalField1 = s.ShelfDescription,
+                    AdditionalField2 = s.Bookcase1
+                }).ToList(),
                 "Genre" => (await GetGenresAsync()).Select(g => new MasterListItemDto
                 {
                     Id = g.GenreID,
@@ -350,21 +357,33 @@ namespace LTF_Library_V1.Services
         public async Task<OperationResultDto> AddParticipantAsync(ParticipantDto participant)
         {
             try
-            {
-                if (await _context.Set<Data.Models.Participant>().AnyAsync(p => 
-                    p.ParticipantFirstName == participant.ParticipantFirstName &&
-                    p.ParticipantLastName == participant.ParticipantLastName))
+            { 
+                // Validate that at least one field has a value
+                if (string.IsNullOrWhiteSpace(participant.ParticipantFirstName) &&
+                    string.IsNullOrWhiteSpace(participant.ParticipantLastName) &&
+                    string.IsNullOrWhiteSpace(participant.AlsoKnownAs))
                 {
-                    return new OperationResultDto { Success = false, Message = "A participant with this name already exists." };
+                    return new OperationResultDto { Success = false, Message = "At least one name field must be provided." };
                 }
 
+                // Only check for duplicates if both first and last names are provided
+                if (!string.IsNullOrWhiteSpace(participant.ParticipantFirstName) &&
+                    !string.IsNullOrWhiteSpace(participant.ParticipantLastName))
+                {
+                    if (await _context.Set<Data.Models.Participant>().AnyAsync(p =>
+                        p.ParticipantFirstName == participant.ParticipantFirstName &&
+                        p.ParticipantLastName == participant.ParticipantLastName))
+                    {
+                        return new OperationResultDto { Success = false, Message = "A participant with this name already exists." };
+                    }
+                }
                 var newParticipant = new Data.Models.Participant
                 {
-                    ParticipantFirstName = participant.ParticipantFirstName,
-                    ParticipantLastName = participant.ParticipantLastName,
-                    AlsoKnownAs=participant.AlsoKnownAs
+                    ParticipantFirstName = string.IsNullOrWhiteSpace(participant.ParticipantFirstName) ? null : participant.ParticipantFirstName,
+                    ParticipantLastName = string.IsNullOrWhiteSpace(participant.ParticipantLastName) ? null : participant.ParticipantLastName,
+                    AlsoKnownAs = string.IsNullOrWhiteSpace(participant.AlsoKnownAs) ? null : participant.AlsoKnownAs
                 };
-                
+
                 _context.Set<Data.Models.Participant>().Add(newParticipant);
                 await _context.SaveChangesAsync();
                 
@@ -549,20 +568,32 @@ namespace LTF_Library_V1.Services
         {
             try
             {
+
                 var existing = await _context.Set<Data.Models.Participant>().FindAsync(participant.ParticipantID);
-                if (existing == null) return new OperationResultDto { Success = false, Message = "Participant not found." };
-
-                if (await _context.Set<Data.Models.Participant>().AnyAsync(p => 
-                    p.ParticipantID != participant.ParticipantID &&
-                    p.ParticipantFirstName == participant.ParticipantFirstName &&
-                    p.ParticipantLastName == participant.ParticipantLastName))
+                if (existing == null)
+                    return new OperationResultDto { Success = false, Message = "Participant not found." };
+                // Validate that at least one field has a value
+                if (string.IsNullOrWhiteSpace(participant.ParticipantFirstName) &&
+                    string.IsNullOrWhiteSpace(participant.ParticipantLastName) &&
+                    string.IsNullOrWhiteSpace(participant.AlsoKnownAs))
                 {
-                    return new OperationResultDto { Success = false, Message = "A participant with this name already exists." };
+                    return new OperationResultDto { Success = false, Message = "At least one name field must be provided." };
                 }
-
-                existing.ParticipantFirstName = participant.ParticipantFirstName;
-                existing.ParticipantLastName = participant.ParticipantLastName;
-                existing.AlsoKnownAs = participant.AlsoKnownAs;
+                // Only check for duplicates if both first and last names are provided
+                if (!string.IsNullOrWhiteSpace(participant.ParticipantFirstName) &&
+                    !string.IsNullOrWhiteSpace(participant.ParticipantLastName))
+                {
+                    if (await _context.Set<Data.Models.Participant>().AnyAsync(p =>
+                        p.ParticipantID != participant.ParticipantID &&
+                        p.ParticipantFirstName == participant.ParticipantFirstName &&
+                        p.ParticipantLastName == participant.ParticipantLastName))
+                    {
+                        return new OperationResultDto { Success = false, Message = "A participant with this name already exists." };
+                    }
+                }
+                existing.ParticipantFirstName = string.IsNullOrWhiteSpace(participant.ParticipantFirstName) ? null : participant.ParticipantFirstName;
+                existing.ParticipantLastName = string.IsNullOrWhiteSpace(participant.ParticipantLastName) ? null : participant.ParticipantLastName;
+                existing.AlsoKnownAs = string.IsNullOrWhiteSpace(participant.AlsoKnownAs) ? null : participant.AlsoKnownAs;
 
                 await _context.SaveChangesAsync();
                 return new OperationResultDto { Success = true, Message = "Participant updated successfully." };
