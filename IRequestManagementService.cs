@@ -11,5 +11,6 @@ namespace LTF_Library_V1.Services
         Task<PendingRequestDto?> GetRequestByIdAsync(int requestId);
         Task<List<PendingRequestDto>> GetRequestsByStatusAsync(string status);
         Task<bool> SendRequestStatusEmailAsync(int requestId, string status, string? adminNotes = null);
+        Task<bool> UpdateRequestStatusAsync(int requestId, string status, string processedBy, string? adminNotes);
     }
 }

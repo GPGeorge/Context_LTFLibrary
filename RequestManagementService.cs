@@ -1,8 +1,10 @@
 ﻿// Services/RequestManagementService.cs - Alternative approach without DbContextFactory
-using Microsoft.EntityFrameworkCore;
 using LTF_Library_V1.Data;
 using LTF_Library_V1.DTOs;
 using LTF_Library_V1.Services;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace LTF_Library_V1.Services
 {
@@ -11,15 +13,17 @@ namespace LTF_Library_V1.Services
         // CHANGED: Use IServiceProvider to create scoped contexts
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<RequestManagementService> _logger;
+        private readonly string _connectionString;
 
         public RequestManagementService(
             IServiceProvider serviceProvider,
-            ILogger<RequestManagementService> logger)
+            ILogger<RequestManagementService> logger,
+            IConfiguration configuration)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
-
         public async Task<List<PendingRequestDto>> GetPendingRequestsAsync()
         {
             try
@@ -53,56 +57,43 @@ namespace LTF_Library_V1.Services
                 return new List<PendingRequestDto>();
             }
         }
-
         public async Task<RequestProcessingResult> ProcessRequestAsync(ProcessRequestDto processRequest)
         {
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-                var request = await context.PublicationRequests
-                    .FirstOrDefaultAsync(r => r.RequestID == processRequest.RequestID);
-
-                if (request == null)
-                {
-                    return new RequestProcessingResult
-                    {
-                        Success = false,
-                        Message = "Request not found"
-                    };
-                }
-
                 // Map action to status
                 var newStatus = processRequest.Action switch
                 {
                     "Approve" => "Approved",
                     "Deny" => "Denied",
-                    "RequestInfo" => "More Info Requested",
-                    _ => request.Status
+                    "RequestInfo" => "Additional Information Requested",
+                    _ => "Pending"
                 };
 
-                request.Status = newStatus;
-                request.ProcessedBy = processRequest.ProcessedBy;
-                request.ProcessedDate = DateTime.Now;
-                request.AdminNotes = processRequest.AdminNotes;
+                // Call the stored procedure to update the status
+                var success = await UpdateRequestStatusAsync(
+                    processRequest.RequestID,
+                    newStatus,
+                    processRequest.ProcessedBy,
+                    processRequest.AdminNotes
+                );
 
-                await context.SaveChangesAsync();
-
-                // Send email notification (implement as needed)
-                await SendRequestStatusEmailAsync(request.RequestID, newStatus, processRequest.AdminNotes);
-
-                var message = processRequest.Action switch
+                if (!success)
                 {
-                    "Approve" => "Request approved",
-                    "Deny" => "Request denied",
-                    "RequestInfo" => "Additional information requested",
-                    _ => $"Request processed successfully"
-                };
+                    return new RequestProcessingResult
+                    {
+                        Success = false,
+                        Message = "Failed to update request status"
+                    };
+                }
+
+                // Send email notification
+                await SendRequestStatusEmailAsync(processRequest.RequestID, newStatus, processRequest.AdminNotes);
+
                 return new RequestProcessingResult
                 {
                     Success = true,
-                    Message = message
+                    Message = $"Request {processRequest.Action.ToLower()}d successfully"
                 };
             }
             catch (Exception ex)
@@ -116,6 +107,32 @@ namespace LTF_Library_V1.Services
             }
         }
 
+        public async Task<bool> UpdateRequestStatusAsync(int requestId, string status, string processedBy, string? adminNotes)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                using var command = new SqlCommand("sp_UpdateRequestStatus", connection);
+
+                command.CommandType = CommandType.StoredProcedure;
+
+                command.Parameters.AddWithValue("@RequestID", requestId);
+                command.Parameters.AddWithValue("@Status", status);
+                command.Parameters.AddWithValue("@ProcessedBy", processedBy);
+                command.Parameters.AddWithValue("@ProcessedDate", DateTime.Now);
+                command.Parameters.AddWithValue("@AdminNotes", adminNotes ?? (object)DBNull.Value);
+
+                await connection.OpenAsync();
+                await command.ExecuteNonQueryAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating request status for RequestID {RequestId}", requestId);
+                return false;
+            }
+        }
         public async Task<PendingRequestDto?> GetRequestByIdAsync(int requestId)
         {
             try

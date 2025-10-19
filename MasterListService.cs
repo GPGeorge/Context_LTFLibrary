@@ -9,6 +9,7 @@ namespace LTF_Library_V1.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<MasterListService> _logger;
+        private readonly string _connectionString;
 
         public MasterListService(ApplicationDbContext context, ILogger<MasterListService> logger)
         {
@@ -763,7 +764,7 @@ namespace LTF_Library_V1.Services
             {
                 return tableName switch
                 {
-                    "Bookcase" => await _context.Set<Data.Models.Shelf>().AnyAsync(s => s.ShelfID == itemId),
+                    "Bookcase" => await _context.Set<Data.Models.Shelf>().AnyAsync(s => s.BookCaseID == itemId),
                     
                     "Creator" => await _context.Set<Data.Models.PublicationCreator>().AnyAsync(pc => pc.CreatorID == itemId),
                     
