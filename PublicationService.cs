@@ -248,25 +248,7 @@ namespace LTF_Library_V1.Services
             }
         }
 
-    //public async Task<List<KeywordDto>> GetKeywordsAsync()
-    //{
-    //    try
-    //    {
-    //        // Get distinct keywords from tblApprovedKeywords that are actually used in publications
-    //        return await _context.PublicationKeyWords
-    //            .Where(pkw => pkw.KeyWord != null && pkw.KeyWord != "")
-    //            .Select(pkw => pkw.KeyWord!)
-    //            .Distinct()
-    //            .OrderBy(kw => kw)
-    //            .Select(kw => new KeywordDto { Keyword = kw })
-    //            .ToListAsync();
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _logger.LogError(ex, "Error getting keywords");
-    //        throw;
-    //    }
-    //}
+  
 
         public async Task<CollectionStatisticsDto> GetCollectionStatisticsAsync()
         {
@@ -418,14 +400,27 @@ namespace LTF_Library_V1.Services
             }
         }
 
+        ////new 
         public async Task<ServiceResult> UpdatePublicationAsync(PublicationEditDto publication)
         {
+            // Use a transaction to ensure all changes succeed or all fail
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
             try
             {
+                // ============================================================
+                // DIAGNOSTIC LOGGING - See what data we received
+                // ============================================================
+                _logger.LogInformation("=== RECEIVED DATA FOR Publication {PublicationId} ===", publication.PublicationID);
+                _logger.LogInformation("AuthorIds: {AuthorIds}",
+                    publication.AuthorIds == null ? "NULL" : string.Join(", ", publication.AuthorIds));
+                _logger.LogInformation("GenreIds: {GenreIds}",
+                    publication.GenreIds == null ? "NULL" : string.Join(", ", publication.GenreIds));
+                _logger.LogInformation("Keywords: {Keywords}",
+                    publication.Keywords == null ? "NULL" : string.Join(", ", publication.Keywords));
+                _logger.LogInformation("=== END RECEIVED DATA ===");
+
                 var existingPublication = await _context.Publications
-                    .Include(p => p.PublicationCreators)
-                    .Include(p => p.PublicationGenres)
-                    .Include(p => p.PublicationKeyWords)
                     .FirstOrDefaultAsync(p => p.PublicationID == publication.PublicationID);
 
                 if (existingPublication == null)
@@ -456,40 +451,206 @@ namespace LTF_Library_V1.Services
                 existingPublication.MediaConditionID = publication.MediaConditionID;
                 existingPublication.ShelfID = publication.ShelfID;
 
-                // Update creators (authors)
-                existingPublication.PublicationCreators.Clear();
-                foreach (var authorId in publication.AuthorIds)
+                _logger.LogInformation("Starting update for Publication {PublicationId}", publication.PublicationID);
+
+                // ============================================================
+                // Update PublicationCreators (Authors)
+                // ============================================================
+
+                // Load existing creator entities with tracking
+                var existingCreatorEntities = await _context.PublicationCreators
+                    .Where(pc => pc.PublicationID == publication.PublicationID)
+                    .ToListAsync();
+
+                _logger.LogInformation("Found {Count} existing PublicationCreators for Publication {PublicationId}",
+                    existingCreatorEntities.Count, publication.PublicationID);
+
+                var existingAuthorIds = existingCreatorEntities
+                    .Where(pc => pc.CreatorID.HasValue)
+                    .Select(pc => pc.CreatorID!.Value)
+                    .ToList();
+
+                _logger.LogInformation("Existing CreatorIDs in DB: {ExistingIds}", string.Join(", ", existingAuthorIds));
+
+                var newAuthorIds = publication.AuthorIds ?? new List<int>();
+
+                _logger.LogInformation("New CreatorIDs from form: {NewIds}", string.Join(", ", newAuthorIds));
+
+                // Find creators to remove (in existing but not in new)
+                var creatorsToRemove = existingCreatorEntities
+                    .Where(pc => pc.CreatorID.HasValue && !newAuthorIds.Contains(pc.CreatorID.Value))
+                    .ToList();
+
+                // Find author IDs to add (in new but not in existing)
+                var authorIdsToAdd = newAuthorIds
+                    .Where(id => !existingAuthorIds.Contains(id))
+                    .ToList();
+
+                _logger.LogInformation("PublicationCreators: Removing {RemoveCount}, Adding {AddCount}",
+                    creatorsToRemove.Count, authorIdsToAdd.Count);
+
+                if (creatorsToRemove.Any())
                 {
-                    existingPublication.PublicationCreators.Add(new PublicationCreator
+                    _logger.LogInformation("IDs being removed: {RemoveIds}",
+                        string.Join(", ", creatorsToRemove.Select(c => c.CreatorID)));
+                }
+
+                if (authorIdsToAdd.Any())
+                {
+                    _logger.LogInformation("IDs being added: {AddIds}", string.Join(", ", authorIdsToAdd));
+                }
+
+                // Remove creators that are no longer associated
+                if (creatorsToRemove.Any())
+                {
+                    _context.PublicationCreators.RemoveRange(creatorsToRemove);
+                    _logger.LogInformation("Marked {Count} PublicationCreators for deletion", creatorsToRemove.Count);
+                }
+
+                // Add new creators
+                if (authorIdsToAdd.Any())
+                {
+                    var newCreators = authorIdsToAdd.Select(authorId => new PublicationCreator
                     {
                         PublicationID = publication.PublicationID,
                         CreatorID = authorId
-                    });
+                    }).ToList();
+
+                    await _context.PublicationCreators.AddRangeAsync(newCreators);
+                    _logger.LogInformation("Added {Count} new PublicationCreators", newCreators.Count);
                 }
 
-                // Update genres (categories)
-                existingPublication.PublicationGenres.Clear();
-                foreach (var genreId in publication.GenreIds)
+                // ============================================================
+                // Update PublicationGenres (Categories)
+                // ============================================================
+
+                // Load existing genre entities with tracking
+                var existingGenreEntities = await _context.PublicationGenres
+                    .Where(pg => pg.PublicationID == publication.PublicationID)
+                    .ToListAsync();
+
+                _logger.LogInformation("Found {Count} existing PublicationGenres for Publication {PublicationId}",
+                    existingGenreEntities.Count, publication.PublicationID);
+
+                var existingGenreIds = existingGenreEntities
+                    .Where(pg => pg.GenreID.HasValue)
+                    .Select(pg => pg.GenreID!.Value)
+                    .ToList();
+
+                _logger.LogInformation("Existing GenreIDs in DB: {ExistingIds}", string.Join(", ", existingGenreIds));
+
+                var newGenreIds = publication.GenreIds ?? new List<int>();
+
+                _logger.LogInformation("New GenreIDs from form: {NewIds}", string.Join(", ", newGenreIds));
+
+                // Find genres to remove (in existing but not in new)
+                var genresToRemove = existingGenreEntities
+                    .Where(pg => pg.GenreID.HasValue && !newGenreIds.Contains(pg.GenreID.Value))
+                    .ToList();
+
+                // Find genre IDs to add (in new but not in existing)
+                var genreIdsToAdd = newGenreIds
+                    .Where(id => !existingGenreIds.Contains(id))
+                    .ToList();
+
+                _logger.LogInformation("PublicationGenres: Removing {RemoveCount}, Adding {AddCount}",
+                    genresToRemove.Count, genreIdsToAdd.Count);
+
+                if (genresToRemove.Any())
                 {
-                    existingPublication.PublicationGenres.Add(new PublicationGenre
+                    _logger.LogInformation("IDs being removed: {RemoveIds}",
+                        string.Join(", ", genresToRemove.Select(g => g.GenreID)));
+                }
+
+                if (genreIdsToAdd.Any())
+                {
+                    _logger.LogInformation("IDs being added: {AddIds}", string.Join(", ", genreIdsToAdd));
+                }
+
+                // Remove genres that are no longer associated
+                if (genresToRemove.Any())
+                {
+                    _context.PublicationGenres.RemoveRange(genresToRemove);
+                    _logger.LogInformation("Marked {Count} PublicationGenres for deletion", genresToRemove.Count);
+                }
+
+                // Add new genres
+                if (genreIdsToAdd.Any())
+                {
+                    var newGenres = genreIdsToAdd.Select(genreId => new PublicationGenre
                     {
                         PublicationID = publication.PublicationID,
                         GenreID = genreId
-                    });
+                    }).ToList();
+
+                    await _context.PublicationGenres.AddRangeAsync(newGenres);
+                    _logger.LogInformation("Added {Count} new PublicationGenres", newGenres.Count);
                 }
 
-                // Update keywords
-                existingPublication.PublicationKeyWords.Clear();
-                foreach (var keyword in publication.Keywords)
+                // ============================================================
+                // Update PublicationKeyWords
+                // ============================================================
+
+                // Load existing keywords for this publication
+                var existingKeywordEntities = await _context.PublicationKeyWords
+                    .Where(pkw => pkw.PublicationID == publication.PublicationID)
+                    .ToListAsync();
+
+                _logger.LogInformation("Found {Count} existing PublicationKeyWords for Publication {PublicationId}",
+                    existingKeywordEntities.Count, publication.PublicationID);
+
+                var existingKeywords = existingKeywordEntities
+                    .Select(pkw => pkw.KeyWord ?? "")
+                    .ToList();
+
+                var newKeywords = publication.Keywords ?? new List<string>();
+
+                // Find keywords to remove (in existing but not in new)
+                var keywordsToRemove = existingKeywordEntities
+                    .Where(pkw => !newKeywords.Contains(pkw.KeyWord ?? ""))
+                    .ToList();
+
+                // Find keywords to add (in new but not in existing)
+                var keywordsToAdd = newKeywords
+                    .Where(kw => !string.IsNullOrWhiteSpace(kw) && !existingKeywords.Contains(kw))
+                    .ToList();
+
+                _logger.LogInformation("PublicationKeyWords: Removing {RemoveCount}, Adding {AddCount}",
+                    keywordsToRemove.Count, keywordsToAdd.Count);
+
+                // Remove keywords that are no longer associated
+                if (keywordsToRemove.Any())
                 {
-                    existingPublication.PublicationKeyWords.Add(new PublicationKeyWord
+                    _context.PublicationKeyWords.RemoveRange(keywordsToRemove);
+                    _logger.LogInformation("Marked {Count} PublicationKeyWords for deletion", keywordsToRemove.Count);
+                }
+
+                // Add new keywords
+                if (keywordsToAdd.Any())
+                {
+                    var newKeywordEntities = keywordsToAdd.Select(keyword => new PublicationKeyWord
                     {
                         PublicationID = publication.PublicationID,
                         KeyWord = keyword
-                    });
+                    }).ToList();
+
+                    await _context.PublicationKeyWords.AddRangeAsync(newKeywordEntities);
+                    _logger.LogInformation("Added {Count} new PublicationKeyWords", newKeywordEntities.Count);
                 }
 
-                await _context.SaveChangesAsync();
+                // ============================================================
+                // Save all changes within the transaction
+                // ============================================================
+                _logger.LogInformation("Saving changes for Publication {PublicationId}", publication.PublicationID);
+
+                var changeCount = await _context.SaveChangesAsync();
+
+                _logger.LogInformation("SaveChanges completed with {ChangeCount} changes", changeCount);
+
+                // Commit the transaction
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("Transaction committed successfully for Publication {PublicationId}", publication.PublicationID);
 
                 return new ServiceResult
                 {
@@ -499,14 +660,21 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating publication");
+                // Rollback the transaction if anything fails
+                await transaction.RollbackAsync();
+
+                _logger.LogError(ex, "Error updating publication {PublicationId}. Exception: {Message}",
+                    publication.PublicationID, ex.Message);
+
                 return new ServiceResult
                 {
                     Success = false,
-                    Message = "An error occurred while updating the publication"
+                    Message = $"An error occurred while updating the publication: {ex.Message}"
                 };
             }
         }
+        ////end 
+        
 
         public async Task<ServiceResult> CreatePublicationAsync(PublicationEditDto publication)
         {
