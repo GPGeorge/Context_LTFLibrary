@@ -152,6 +152,7 @@ namespace LTF_Library_V1.Services
                     Printing = publication.Printing,
                     YearPublished = publication.YearPublished,
                     ConfidenceLevel = publication.ConfidenceLevel,
+                    InternalComments = publication.InternalComments,
                     DateCaptured = publication.DateCaptured,
                     ListPrice = publication.ListPrice,
                     Authors = publication.PublicationCreators
@@ -232,7 +233,6 @@ namespace LTF_Library_V1.Services
                 return await _context.MediaTypes
                     .Where(mt => mt.Publications.Any()) // Only types with publications
                     .OrderBy(mt => mt.SortOrder)
-                    .ThenBy(mt => mt.MediaType1)
                     .Select(mt => new MediaTypeDto
                     {
                         MediaTypeID = mt.MediaTypeID,
@@ -247,8 +247,30 @@ namespace LTF_Library_V1.Services
                 throw;
             }
         }
+        public async Task<List<MediaConditionDto>> GetMediaConditionsAsync()
+        {
+            try
+            {
+                return await _context.MediaConditions
+                    .Where(mc => mc.Publications.Any()) // Only types with publications
+                    .OrderBy(mc => mc.SortOrder)
+                    .Select(mc => new MediaConditionDto
+                    {
+                        MediaConditionID = mc.MediaConditionID,
+                        MediaCondition = mc.MediaCondition1!,
+                        SortOrder = mc.SortOrder
+                    })
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting media conditions");
+                throw;
+            }
+        }
 
-  
+
+
 
         public async Task<CollectionStatisticsDto> GetCollectionStatisticsAsync()
         {
@@ -360,6 +382,7 @@ namespace LTF_Library_V1.Services
                     Printing = publication.Printing,
                     YearPublished = publication.YearPublished,
                     ConfidenceLevel = publication.ConfidenceLevel,
+                    InternalComments= publication.InternalComments, 
                     ListPrice = publication.ListPrice,
                     PublisherID = publication.PublisherID,
                     MediaTypeID = publication.MediaTypeID,
@@ -445,6 +468,7 @@ namespace LTF_Library_V1.Services
                 existingPublication.Printing = publication.Printing;
                 existingPublication.YearPublished = publication.YearPublished;
                 existingPublication.ConfidenceLevel = publication.ConfidenceLevel;
+                existingPublication.InternalComments = publication.InternalComments;
                 existingPublication.ListPrice = publication.ListPrice;
                 existingPublication.PublisherID = publication.PublisherID;
                 existingPublication.MediaTypeID = publication.MediaTypeID;
@@ -694,6 +718,7 @@ namespace LTF_Library_V1.Services
                     Printing = publication.Printing,
                     YearPublished = publication.YearPublished,
                     ConfidenceLevel = publication.ConfidenceLevel,
+                    InternalComments = publication.InternalComments,
                     ListPrice = publication.ListPrice,
                     PublisherID = publication.PublisherID,
                     MediaTypeID = publication.MediaTypeID,
@@ -799,8 +824,8 @@ namespace LTF_Library_V1.Services
                     .Select(p => new PublisherDto
                     {
                         PublisherID = p.PublisherID,
-                        Publisher = p.Publisher1!,
-                        PublisherGoogle = p.PublisherGoogle
+                        Publisher = p.Publisher1! ?? string.Empty,
+                        PublisherGoogle = p.PublisherGoogle ?? string.Empty
                     })
                     .ToListAsync();
             }

@@ -114,8 +114,20 @@ namespace LTF_Library_V1.DTOs
         }
 
         [Required(ErrorMessage = "Participant status is required")]
-        [StringLength(50, ErrorMessage = "Participant status cannot exceed 50 characters")]
+        [StringLength(255, ErrorMessage = "Participant status cannot exceed 255 characters")]
         public string ParticipantStatus1 { get; set; } = string.Empty;
+        // Extended description added 2025-12-22
+        [Required(ErrorMessage = "Extended description is required")]
+        [StringLength(100, ErrorMessage = "Extended description cannot exceed 100 characters")]
+        public string ExtendedDescription{
+            get; set;
+        } = string.Empty;
+        [Required(ErrorMessage = "Transaction Type is required")]
+        [StringLength(10, ErrorMessage = "Transaction Type cannot exceed 10 characters")]
+        public string TransactionType
+        {
+            get; set;
+        } = string.Empty;
 
         public int? SortOrder
         {

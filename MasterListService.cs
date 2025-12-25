@@ -9,7 +9,7 @@ namespace LTF_Library_V1.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<MasterListService> _logger;
-        private readonly string _connectionString;
+        //private readonly string _connectionString;
 
         public MasterListService(ApplicationDbContext context, ILogger<MasterListService> logger)
         {
@@ -56,14 +56,7 @@ namespace LTF_Library_V1.Services
                     Name = m.MediaCondition,
                     SortOrder = m.SortOrder
                 }).ToList(),
-                
-                "ParticipantStatus" => (await GetParticipantStatusesAsync()).Select(p => new MasterListItemDto
-                {
-                    Id = p.ParticipantStatusID,
-                    Name = p.ParticipantStatus1,
-                    SortOrder = p.SortOrder
-                }).ToList(),
-                
+               
                 _ => new List<MasterListItemDto>()
             };
         }
@@ -110,7 +103,7 @@ namespace LTF_Library_V1.Services
                 .Select(g => new GenreDto
                 {
                     GenreID = g.GenreID,
-                    Genre = g.Genre1,
+                    Genre = g.Genre1 ?? string.Empty,
                     SortOrder = g.SortOrder
                 })
                 .ToListAsync();
@@ -123,7 +116,7 @@ namespace LTF_Library_V1.Services
                 .Select(p => new PublisherDto
                 {
                     PublisherID = p.PublisherID,
-                    Publisher1 = p.Publisher1,
+                    Publisher = p.Publisher1 ?? string.Empty,
                     PublisherGoogle = p.PublisherGoogle
                 })
                 .ToListAsync();
@@ -137,7 +130,7 @@ namespace LTF_Library_V1.Services
                 .Select(m => new MediaTypeDto
                 {
                     MediaTypeID = m.MediaTypeID,
-                    MediaType = m.MediaType1,
+                    MediaType = m.MediaType1 ?? string.Empty,
                     SortOrder = m.SortOrder
                 })
                 .ToListAsync();
@@ -151,7 +144,7 @@ namespace LTF_Library_V1.Services
                 .Select(m => new MediaConditionDto
                 {
                     MediaConditionID = m.MediaConditionID,
-                    MediaCondition = m.MediaCondition1,
+                    MediaCondition = m.MediaCondition1 ?? string.Empty,
                     SortOrder = m.SortOrder
                 })
                 .ToListAsync();
@@ -169,21 +162,24 @@ namespace LTF_Library_V1.Services
                     ParticipantLastName = p.ParticipantLastName,
                     AlsoKnownAs = p.AlsoKnownAs,
                     FullName = (p.ParticipantFirstName ?? "") +                              
-                              (p.ParticipantLastName ?? ""),
+                               (p.ParticipantLastName ?? ""),
                     SortName = (p.ParticipantLastName ?? "") + ", " + (p.ParticipantFirstName ?? "")
                 })
                 .ToListAsync();
         }
-
+        //added ExtendedDescription mapping 2025-12-22
+        //added TransactionType mapping 2025-12-23  
+        //removed superfluous OrderBy on ParticipantStatus1  2025-12-23 
         public async Task<List<ParticipantStatusDto>> GetParticipantStatusesAsync()
         {
             return await _context.Set<Data.Models.ParticipantStatus>()
                 .OrderBy(p => p.SortOrder ?? int.MaxValue)
-                .ThenBy(p => p.ParticipantStatus1)
                 .Select(p => new ParticipantStatusDto
                 {
                     ParticipantStatusID = p.ParticipantStatusID,
-                    ParticipantStatus1 = p.ParticipantStatus1,
+                    ParticipantStatus1 = p.ParticipantStatus1 ?? string.Empty,
+                    ExtendedDescription = p.ExtendedDescription ?? string.Empty,
+                    TransactionType = p.TransactionType ?? string.Empty,    
                     SortOrder = p.SortOrder
                 })
                 .ToListAsync();
@@ -193,12 +189,12 @@ namespace LTF_Library_V1.Services
         {
             return await _context.Set<Data.Models.Shelf>()
                 .Include(s => s.Bookcase)
-                .OrderBy(s => s.Bookcase.Bookcase1 )
+                .OrderBy(s => s.Bookcase != null ? s.Bookcase.Bookcase1 ?? string.Empty : string.Empty)
                 .ThenBy(s => s.Shelf1)
                 .Select(s => new ShelfDto
                 {
                     ShelfID = s.ShelfID,
-                    Shelf1 = s.Shelf1,
+                    Shelf1 = s.Shelf1 ?? string.Empty,
                     BookcaseID = s.BookCaseID,
                     Bookcase1 = s.Bookcase != null ? s.Bookcase.Bookcase1 : null,
                     ShelfDescription = s.ShelfDescription
@@ -207,6 +203,11 @@ namespace LTF_Library_V1.Services
         }
 
         // Add Item - Generic for simple tables
+        //parameter item.AdditionalField1 is used for BookcaseDescription in Bookcase, ShelfDescription Shelf, and ExtendedDescription in ParticipantStatus
+        //parameter item.AdditionalField2 is used for TransactionType in ParticipantStatus
+        //additemAsync method updated 2025-12-23 to handle ParticipantStatus table addition
+        //AddItemAsync method requires tablename and MasterListItemDto item
+        
         public async Task<OperationResultDto> AddItemAsync(string tableName, MasterListItemDto item)
         {
             try
@@ -276,7 +277,9 @@ namespace LTF_Library_V1.Services
                     case "ParticipantStatus":
                         var participantStatus = new Data.Models.ParticipantStatus
                         {
-                            ParticipantStatus1 = item.Name,
+                            ParticipantStatus1 = item.Name ?? string.Empty,
+                            ExtendedDescription=item.AdditionalField1 ?? string.Empty,
+                            TransactionType=item.AdditionalField2 ?? string.Empty,
                             SortOrder = item.SortOrder
                         };
                         _context.Set<Data.Models.ParticipantStatus>().Add(participantStatus);
@@ -332,14 +335,14 @@ namespace LTF_Library_V1.Services
             try
             {
                 if (await _context.Set<Data.Models.Publisher>().AnyAsync(p => 
-                    p.Publisher1.ToLower() == publisher.Publisher1.ToLower()))
+                    p.Publisher1.ToLower() == publisher.Publisher.ToLower()))
                 {
                     return new OperationResultDto { Success = false, Message = "A publisher with this name already exists." };
                 }
 
                 var newPublisher = new Data.Models.Publisher
                 {
-                    Publisher1 = publisher.Publisher1,
+                    Publisher1 = publisher.Publisher,
                     PublisherGoogle = publisher.PublisherGoogle
                 };
                 
@@ -491,6 +494,8 @@ namespace LTF_Library_V1.Services
                         var participantStatus = await _context.Set<Data.Models.ParticipantStatus>().FindAsync(item.Id);
                         if (participantStatus == null) return new OperationResultDto { Success = false, Message = "Participant Status not found." };
                         participantStatus.ParticipantStatus1 = item.Name;
+                        participantStatus.ExtendedDescription = item.AdditionalField1;
+                        participantStatus.TransactionType = item.AdditionalField2;  
                         participantStatus.SortOrder = item.SortOrder;
                         await _context.SaveChangesAsync();
                         return new OperationResultDto { Success = true, Message = "Participant Status updated successfully." };
@@ -547,12 +552,12 @@ namespace LTF_Library_V1.Services
 
                 if (await _context.Set<Data.Models.Publisher>().AnyAsync(p => 
                     p.PublisherID != publisher.PublisherID &&
-                    p.Publisher1.ToLower() == publisher.Publisher1.ToLower()))
+                    p.Publisher1.ToLower() == publisher.Publisher.ToLower()))
                 {
                     return new OperationResultDto { Success = false, Message = "A publisher with this name already exists." };
                 }
 
-                existing.Publisher1 = publisher.Publisher1;
+                existing.Publisher1 = publisher.Publisher;
                 existing.PublisherGoogle = publisher.PublisherGoogle;
                 
                 await _context.SaveChangesAsync();

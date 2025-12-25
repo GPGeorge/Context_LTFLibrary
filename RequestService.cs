@@ -1,4 +1,5 @@
 ﻿// Services/RequestService.cs - Your existing service
+using Azure.Core;
 using LTF_Library_V1.DTOs;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -9,10 +10,11 @@ namespace LTF_Library_V1.Services
     public class RequestService : IRequestService
     {
         private readonly string _connectionString;
-
+        private readonly ILogger<RequestService> _logger;
         public RequestService(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
+            
         }
 
         public async Task<bool> SubmitRequestAsync(RequestFormModel request, PublicationDetailDto publication)
@@ -53,8 +55,7 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                // Log the error (you might want to use ILogger here)
-                //console.writeLine($"Error submitting request: {ex.Message}");
+                _logger.LogError(ex, "Error submitting request");
                 return false;
             }
         }
@@ -94,7 +95,7 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                //console.writeLine($"Error getting requests: {ex.Message}");
+                _logger.LogError(ex, "Error getting all requests");
             }
 
             return requests;
@@ -134,7 +135,7 @@ namespace LTF_Library_V1.Services
             }
             catch (Exception ex)
             {
-                //console.writeLine($"Error getting request by ID: {ex.Message}");
+                _logger.LogError(ex, "Error getting request by ID: {RequestId}", requestId);
             }
 
             return null;

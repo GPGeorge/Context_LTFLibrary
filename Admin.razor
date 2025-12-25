@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Authorization 
 @using Microsoft.AspNetCore.Identity
 @using LTF_Library_V1.Data.Models
+@using LTF_Library_V1.Constants
 @using System.ComponentModel.DataAnnotations
 @using System.Security.Claims
 @inject IRequestManagementService RequestService
@@ -478,164 +479,20 @@
             </div>
         </div>
     </div>
-    @if (ShowEditPublicationModal && EditingPublication != null)
-    {
-        <div class="modal" @onclick="CloseEditPublicationModal">
-            <div class="large-modal modal-content" @onclick:stopPropagation="true">
-                <div class="modal-header">
-                    <h2 class="modal-title">@(IsAddingNewPublication ? "Add New Publication" : "Edit Publication")</h2>
-                    <button class="close-btn" @onclick="CloseEditPublicationModal">&times;</button>
-                </div>
 
-                <div class="modal-body">
-                    <EditForm Model="EditingPublication" OnValidSubmit="SavePublicationChanges">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
-
-                        <!-- Basic Information Section -->
-                        <div class="edit-section">
-                            <h3>Basic Information</h3>
-                            <div class="form-grid">
-                                <div class="form-field full-width">
-                                    <label for="title">Title *</label>
-                                    <InputText @bind-Value="EditingPublication.PublicationTitle" id="title" class="large-input" />
-                                </div>
-
-                                <div class="form-field">
-                                    <label for="isbn">ISBN</label>
-                                    <InputText @bind-Value="EditingPublication.ISBN" id="isbn" />
-                                </div>
-
-                                <div class="form-field">
-                                    <label for="year">Year Published</label>
-                                    <InputText @bind-Value="EditingPublication.YearPublished" id="year" />
-                                </div>
-
-                                <div class="form-field">
-                                    <label for="edition">Edition</label>
-                                    <InputText @bind-Value="EditingPublication.Edition" id="edition" />
-                                </div>
-
-                                <div class="form-field">
-                                    <label for="pages">Pages</label>
-                                    <InputNumber @bind-Value="EditingPublication.Pages" id="pages" />
-                                </div>
-
-                                <div class="form-field">
-                                    <label for="volume">Volume</label>
-                                    <InputNumber @bind-Value="EditingPublication.Volume" id="volume" />
-                                </div>
-
-                                <div class="form-field">
-                                    <label for="numVolumes">Number of Volumes</label>
-                                    <InputNumber @bind-Value="EditingPublication.NumberOfVolumes" id="numVolumes" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Publisher Section -->
-                        <div class="edit-section">
-                            <h3>Publisher</h3>
-                            <div class="form-field">
-                                <label>Select Publisher</label>
-                                <select @bind="EditingPublication.PublisherID" class="form-control">
-                                    <option value="">Select Publisher...</option>
-                                    @if (Publishers != null)
-                                    {
-                                        @foreach (var pub in Publishers)
-                                        {
-                                            <option value="@pub.PublisherID">@pub.DisplayName</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Authors Section -->
-                        <div class="edit-section">
-                            <h3>Authors/Creators</h3>
-                            <div class="current-authors">
-                                @if (EditingPublication.SelectedAuthors?.Any() == true)
-                                {
-                                    <p><strong>Current Authors:</strong> @string.Join(", ", EditingPublication.SelectedAuthors.Select(a => a.FullName))</p>
-                                }
-                                else
-                                {
-                                    <p class="no-items">No authors assigned</p>
-                                }
-                                <p class="help-text">Author management coming soon...</p>
-                            </div>
-                        </div>
-
-                        <!-- Categories Section  -->
-                        <div class="edit-section">
-                            <h3>Categories</h3>
-                            <div class="current-categories">
-                                @if (EditingPublication.SelectedCategories?.Any() == true)
-                                {
-                                    <p><strong>Current Categories:</strong> @string.Join(", ", EditingPublication.SelectedCategories.Select(c => c.Genre))</p>
-                                }
-                                else
-                                {
-                                    <p class="no-items">No categories assigned</p>
-                                }
-                                <p class="help-text">Category management coming soon...</p>
-                            </div>
-                        </div>
-
-                        <!-- Keywords Section -->
-                        <div class="edit-section">
-                            <h3>Keywords</h3>
-                            <div class="current-keywords">
-                                @if (EditingPublication.Keywords?.Any() == true)
-                                {
-                                    <p><strong>Current Keywords:</strong> @string.Join(", ", EditingPublication.Keywords)</p>
-                                }
-                                else
-                                {
-                                    <p class="no-items">No keywords assigned</p>
-                                }
-                                <p class="help-text">Keyword management coming soon...</p>
-                            </div>
-                        </div>
-
-                        <!-- Description Section -->
-                        <div class="edit-section">
-                            <h3>Description & Notes</h3>
-                            <div class="form-field full-width">
-                                <label for="comments">Description</label>
-                                <InputTextArea @bind-Value="EditingPublication.Comments" id="comments" rows="5" />
-                            </div>
-                        </div>
-
-                        <!-- Save/Cancel Buttons -->
-                        <div class="modal-footer">
-                            <button type="submit" class="btn-base btn-success" disabled="@IsSavingPublication">
-                                @(IsSavingPublication ? "Saving..." : "Save Changes")
-                            </button>
-                            <button type="button" @onclick="CloseEditPublicationModal" class="btn-base btn-secondary">
-                                Cancel
-                            </button>
-                        </div>
-                    </EditForm>
-                </div>
-            </div>
-        </div>
-    }
 }
 
-<!-- Publication Edit Modal - Add this after your existing modals in Admin.razor -->
 @* Publication Edit Modal *@
-@if (ShowEditPublicationModal && EditingPublication != null)
+@if (ShowEditPublicationModal && EditingPublication != null) 
 {
     <div class="modal" @onclick="CloseEditPublicationModal">
         <div class="large-modal modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">Edit Publication</h2>
+                <h2 class="modal-title">@(IsAddingNewPublication ? "Add New Publication" : "Edit Publication")</h2>
                 <button class="close-btn" @onclick="CloseEditPublicationModal">&times;</button>
             </div>
 
-            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <div class="modal-body" style="max-height: 75vh; overflow-y: auto;"> @* changed vh to 75 from 70 *@
                 <EditForm Model="EditingPublication" OnValidSubmit="SavePublicationChanges">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
@@ -646,15 +503,18 @@
                         <div class="form-row">
                             <div class="form-field flex-grow">
                                 <label for="pubTitle">Title *</label>
-                                <InputText @bind-Value="EditingPublication.PublicationTitle" id="pubTitle" />
+                                <InputTextArea @bind-Value="EditingPublication.PublicationTitle" id="pubTitle" rows="2" />
                             </div>
+                        </div>
+                        <div class="form-row">
                             <div class="form-field">
                                 <label for="pubYear">Year Published</label>
                                 <InputText @bind-Value="EditingPublication.YearPublished" id="pubYear" />
                             </div>
-                        </div>
-
-                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="pubPages">Pages</label>
+                                <InputNumber @bind-Value="EditingPublication.Pages" id="pubPages" />
+                            </div>
                             <div class="form-field">
                                 <label for="pubISBN">ISBN</label>
                                 <InputText @bind-Value="EditingPublication.ISBN" id="pubISBN" />
@@ -664,14 +524,73 @@
                                 <InputText @bind-Value="EditingPublication.Edition" id="pubEdition" />
                             </div>
                             <div class="form-field">
-                                <label for="pubPages">Pages</label>
-                                <InputNumber @bind-Value="EditingPublication.Pages" id="pubPages" />
+                                <label for="confidenceLevel">Confidence </label>
+                                <InputNumber @bind-Value="EditingPublication.ConfidenceLevel" id="confidenceLevel" />
                             </div>
                         </div>
-
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="Printing">Printing</label>
+                                <InputText @bind-Value="EditingPublication.Printing" id="Printing" />
+                            </div>
+                            <div class="form-field">
+                                <label for="LTFCatalog">LTF Catalog Number</label>
+                                <InputText @bind-Value="EditingPublication.CatalogNumber" id="LTFCatalog" />
+                            </div>
+                            <div class="form-field">
+                                <label for="Volume">Volume</label>
+                                <InputNumber @bind-Value="EditingPublication.Volume" id="Volume" />
+                            </div>                           
+                            <div class="form-field">
+                                <label for="Volumes">Of Volumes</label>
+                                <InputNumber @bind-Value="EditingPublication.NumberOfVolumes" id="Volumes" />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="pubMediaType">Media Type</label>
+                                @if (EditingPublication != null)
+                                {
+                                    <InputSelect @bind-Value="EditingPublication.MediaTypeID" id="pubMediaType">
+                                        <option value="">-- Select Media Type --</option>
+                                        @if (MediaTypes != null)
+                                        {
+                                            @foreach (var mediaType in MediaTypes)
+                                            {
+                                                <option value="@mediaType.MediaTypeID">@mediaType.MediaType</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                }
+                            </div>
+                            <div class="form-field">
+                                <label for="pubMediaCondition">Media Condition</label>
+                                @if (EditingPublication != null)
+                                {
+                                    <InputSelect @bind-Value="EditingPublication.MediaConditionID" id="pubMediaCondition">
+                                        <option value="">-- Select Media Condition --</option>
+                                        @if (MediaConditions != null)
+                                        {
+                                            @foreach (var mediaCondition in MediaConditions)
+                                            {
+                                                <option value="@mediaCondition.MediaConditionID">@mediaCondition.MediaCondition</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                }
+                            </div>
+                            <div class="form-field">
+                                <label for="listPrice">List Price</label>
+                                <InputNumber @bind-Value="EditingPublication.ListPrice" id="listPrice" />
+                            </div>
+                        </div>
                         <div class="form-field">
                             <label for="pubComments">Comments/Description</label>
                             <InputTextArea @bind-Value="EditingPublication.Comments" id="pubComments" rows="3" />
+                        </div>
+                        <div class="form-field">
+                            <label for="InternalComments">Internal Comments (for LTF Staff Use Only)</label>
+                            <InputTextArea @bind-Value="EditingPublication.InternalComments" id="InternalComments" rows="2" />
                         </div>
                     </div>
 
@@ -772,28 +691,13 @@
                                         {
                                             @foreach (var publisher in Publishers)
                                             {
-                                                <option value="@publisher.PublisherID">@publisher.DisplayName</option>
+                                                <option value="@publisher.PublisherID">@publisher.Publisher</option>
                                             }
                                         }
                                     </InputSelect>
                                 }
                             </div>
-                            <div class="form-field">
-                                <label for="pubMediaType">Media Type</label>
-                                @if (EditingPublication != null)
-                                {
-                                    <InputSelect @bind-Value="EditingPublication.MediaTypeID" id="pubMediaType">
-                                        <option value="">-- Select Media Type --</option>
-                                        @if (MediaTypes != null)
-                                        {
-                                            @foreach (var mediaType in MediaTypes)
-                                            {
-                                                <option value="@mediaType.MediaTypeID">@mediaType.MediaType</option>
-                                            }
-                                        }
-                                    </InputSelect>
-                                }
-                            </div>
+                            
                         </div>
                     </div>
 
@@ -884,6 +788,7 @@
     private List<CreatorDto>? Authors;
     private List<GenreDto>? Genres;
     private List<MediaTypeDto>? MediaTypes;
+    private List<MediaConditionDto>? MediaConditions;
     private List<PublisherDto>? Publishers;  
     private bool ShowEditPublicationModal = false;
     private PublicationEditDto? EditingPublication;
@@ -1002,6 +907,7 @@
             Authors = await PublicationService.GetAuthorsAsync();
             Genres = await PublicationService.GetGenresAsync();
             MediaTypes = await PublicationService.GetMediaTypesAsync();
+            MediaConditions = await PublicationService.GetMediaConditionsAsync(); /* 2025-12-24  begin here */
             Publishers = await PublisherService.GetPublishersAsync();
         }
         catch (Exception ex)
@@ -1014,14 +920,14 @@
     {
         await LoadPendingRequests();
     }
-    private async Task EditPub() /* New Task for new EditPub function */
-    {
+    // private async Task EditPub() /* New Task for new EditPub function */
+    // {
         
-    }
-    private async Task RefreshPub() /* New Task for new EditPub function */
-    {
+    // }
+    // private async Task RefreshPub() /* New Task for new EditPub function */
+    // {
 
-    }
+    // }
     private async Task RefreshUsers()
     {
         await LoadUsers();
@@ -1102,7 +1008,7 @@
                 Console.WriteLine($"=== PUBLISHERS: Loaded {Publishers?.Count ?? 0} publishers");
 
                 MediaTypes = await PublicationService.GetMediaTypesAsync();
-
+                MediaConditions = await PublicationService.GetMediaConditionsAsync(); /* 2025-12-24 */
                 ShowEditPublicationModal = true;
                 StateHasChanged(); // Add this to force re-render
             }
@@ -1123,13 +1029,19 @@
                 PublicationTitle = string.Empty,
                 YearPublished = string.Empty,
                 ISBN = string.Empty,
-                Edition = string.Empty,
+                Edition = PublicationDefaults.Edition,
                 Comments = string.Empty,
                 SelectedAuthors = new List<CreatorDto>(),
                 SelectedCategories = new List<GenreDto>(),
                 Keywords = new List<string>(),
-                PublisherID = null,
-                MediaTypeID = null
+                PublisherID = PublicationDefaults.Publisher,
+                MediaTypeID = PublicationDefaults.MediaType,
+                MediaConditionID=PublicationDefaults.MediaCondition,
+                InternalComments = string.Empty,
+                ConfidenceLevel = PublicationDefaults.ConfidenceLevel,
+                Volume = PublicationDefaults.Volume,
+                NumberOfVolumes = PublicationDefaults.NumberOfVolumes,
+                ListPrice=PublicationDefaults.ListPrice
             };
 
             // Load dropdown data
@@ -1138,7 +1050,7 @@
             ApprovedKeywords = await PublicationService.GetAllKeywordsAsync();
             Publishers = await PublisherService.GetPublishersAsync();
             MediaTypes = await PublicationService.GetMediaTypesAsync();
-
+            MediaConditions = await PublicationService.GetMediaConditionsAsync(); /* 2025-12-24 */
             IsAddingNewPublication = true;
             ShowEditPublicationModal = true;
             StateHasChanged();
@@ -1169,7 +1081,7 @@
                 ApprovedKeywords = await PublicationService.GetAllKeywordsAsync();
                 Publishers = await PublisherService.GetPublishersAsync();
                 MediaTypes = await PublicationService.GetMediaTypesAsync();
-
+                MediaConditions = await PublicationService.GetMediaConditionsAsync(); /* 2025-12-24 */
                 IsAddingNewPublication = false;
                 ShowEditPublicationModal = true;
             }
@@ -1286,10 +1198,12 @@
         {
             get; set;
         }
+        [Required]
         public string Password
         {
             get; set;
         }
+        [Required]
         public string ConfirmPassword
         {
             get; set;
@@ -1301,56 +1215,70 @@
     {
         get; set;
     }
-
-    //here
     private async Task SavePublicationChanges()
     {
         if (EditingPublication == null)
             return;
 
-        IsSavingPublication = true;
         try
         {
+            // ============================================================
+            // CRITICAL: Sync the ID lists from the Selected collections
+            // ============================================================
+
+            // Sync AuthorIds from SelectedAuthors
+            EditingPublication.AuthorIds = EditingPublication.SelectedAuthors?
+                .Select(a => a.CreatorID)
+                .ToList() ?? new List<int>();
+
+            // Sync GenreIds from SelectedCategories
+            EditingPublication.GenreIds = EditingPublication.SelectedCategories?
+                .Select(c => c.GenreID)
+                .ToList() ?? new List<int>();
+
+            // Keywords are already in the correct format (List<string>)
+            // No sync needed for Keywords
+
+            // ============================================================
+            // Log what we're about to send (optional but helpful)
+            // ============================================================
+            Console.WriteLine($"=== SAVING Publication {EditingPublication.PublicationID} ===");
+            Console.WriteLine($"AuthorIds: {string.Join(", ", EditingPublication.AuthorIds)}");
+            Console.WriteLine($"GenreIds: {string.Join(", ", EditingPublication.GenreIds)}");
+            Console.WriteLine($"Keywords: {string.Join(", ", EditingPublication.Keywords ?? new List<string>())}");
+
+            // Now save
             ServiceResult result;
 
             if (IsAddingNewPublication)
             {
-                // Create new publication
                 result = await PublicationService.CreatePublicationAsync(EditingPublication);
             }
             else
             {
-                // Update existing publication
                 result = await PublicationService.UpdatePublicationAsync(EditingPublication);
             }
 
             if (result.Success)
             {
-                await JSRuntime.InvokeVoidAsync("alert",
-                    IsAddingNewPublication ? "Publication created successfully!" : "Publication updated successfully!");
+                await JSRuntime.InvokeVoidAsync("alert", result.Message);
                 CloseEditPublicationModal();
 
-                // Refresh the search results if they exist
-                if (PublicationSearchResults != null)
-                {
-                    await SearchEditPubsPublications();
-                }
+                // Refresh the search results to show the updated data
+                await SavePublicationChanges();
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Error saving publication: {result.Message}");
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {result.Message}");
             }
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("alert", $"Error saving publication: {ex.Message}");
-        }
-        finally
-        {
-            IsSavingPublication = false;
+            Console.WriteLine($"Error details: {ex}");
         }
     }
-    //to here
+    
 
     private async Task RegisterAsync()
     {

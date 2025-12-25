@@ -9,6 +9,7 @@ namespace LTF_Library_V1.Services
         Task<List<CreatorDto>> GetAuthorsAsync();
         Task<List<GenreDto>> GetGenresAsync();
         Task<List<MediaTypeDto>> GetMediaTypesAsync();
+        Task<List<MediaConditionDto>> GetMediaConditionsAsync();
         Task<CollectionStatisticsDto> GetCollectionStatisticsAsync();
         Task<PublicationRequestSubmissionDto> SubmitRequestAsync(PublicationRequestDto request);
         Task<PublicationEditDto?> GetPublicationForEditAsync(int publicationId);

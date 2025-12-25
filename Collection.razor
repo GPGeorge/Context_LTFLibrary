@@ -24,15 +24,19 @@
 
         <div class="visitor-info-section">
             <h2>Welcome to the Lander Trail Foundation Historical Book Collection</h2>
-            <p>Lander Trail Foundation maintains one of the region's most comprehensive collections of historical books, periodicals, newspapers, and archival materials. 
-                Dating from the early 1800s to the present, our collection serves researchers, students, genealogists, and history enthusiasts from our location in Afton, Wyoming.</p>
-            
+            <p>
+                Lander Trail Foundation maintains one of the region's most comprehensive collections of historical books, periodicals, newspapers, and archival materials.
+                Dating from the early 1800s to the present, our collection serves researchers, students, genealogists, and history enthusiasts from our location in Afton, Wyoming.
+            </p>
+
             <div class="visitor-info">
                 <div class="info-box">
                     <h3>📅 Visiting Hours</h3>
-                    <p><strong>Memorial Day Weekend to Labor Day Weekend</strong><br>
-                    <strong>Wednesday - Saturday:</strong> 12:30 PM - 5:30 PM<br>
-                    <strong>Closed:</strong> Sundays, Mondays & Major Holidays</p>
+                    <p>
+                        <strong>Memorial Day Weekend to Labor Day Weekend</strong><br>
+                        <strong>Wednesday - Saturday:</strong> 12:30 PM - 5:30 PM<br>
+                        <strong>Closed:</strong> Sundays, Mondays & Major Holidays
+                    </p>
                 </div>
                 <div class="info-box">
                     <h3>📍 Location & Contact</h3>
@@ -69,7 +73,7 @@
             </div>
         </div>
     </div>
-  
+
 
     <!-- Right Panel - Search -->
     <div class="search-panel">
@@ -79,17 +83,17 @@
                 <h2>Search Our Collection</h2>
                 <p>@TotalPublications books, @TotalPeriodicals periodicals, @TotalAudioRecordings audio recordings and other historical materials</p>
             </div>
-            
+
             <div class="advanced-search-form">
                 <div class="search-row">
                     <div class="search-field">
                         <label for="titleSearch">Title:</label>
                         <input type="text" @bind="SearchCriteria.Title" @bind:event="oninput"
-                               placeholder="Enter book or publication title..." id="titleSearch" />
+                               placeholder="Enter book or publication title..." />
                     </div>
                     <div class="search-field">
                         <label for="authorSearch">Author:</label>
-                        <select @bind="SearchCriteria.CreatorId" id="authorSearch">
+                        <select @bind="SearchCriteria.CreatorId">
                             <option value="">All Authors</option>
                             @if (Authors != null)
                             {
@@ -98,15 +102,19 @@
                                     <option value="@author.CreatorID">@author.FullName</option>
                                 }
                             }
-                      
                         </select>
                     </div>
                 </div>
 
                 <div class="search-row">
                     <div class="search-field">
+                        <label for="keywordSearch">Keyword:</label>
+                        <input type="text" @bind="SearchCriteria.Keyword" @bind:event="oninput"
+                               placeholder="Enter keyword..." />
+                    </div>
+                    <div class="search-field">
                         <label for="categorySearch">Category:</label>
-                        <select @bind="SearchCriteria.GenreId" id="categorySearch">
+                        <select @bind="SearchCriteria.GenreId">
                             <option value="">All Categories</option>
                             @if (Genres != null)
                             {
@@ -117,9 +125,12 @@
                             }
                         </select>
                     </div>
+                </div>
+
+                <div class="search-row">
                     <div class="search-field">
                         <label for="mediaTypeSearch">Material Type:</label>
-                        <select @bind="SearchCriteria.MediaTypeId" id="mediaTypeSearch">
+                        <select @bind="SearchCriteria.MediaTypeId">
                             <option value="">All Types</option>
                             @if (MediaTypes != null)
                             {
@@ -129,6 +140,9 @@
                                 }
                             }
                         </select>
+                    </div>
+                    <div class="search-field">
+                        <!-- Empty field for layout consistency -->
                     </div>
                 </div>
 
@@ -150,7 +164,7 @@
                 {
                     <div class="search-results-header">
                         <div class="results-count">
-                            Found @TotalResults items (showing @((CurrentPage - 1) * PageSize + 1)-@Math.Min(CurrentPage * PageSize, TotalResults))
+                            Found @TotalResults items (showing @(( CurrentPage - 1 ) * PageSize + 1)-@Math.Min(CurrentPage * PageSize, TotalResults))
                         </div>
                         <div class="sort-options">
                             <label for="sortBy">Sort by:</label>
@@ -192,7 +206,7 @@
                             </div>
 
                             <div class="card-content">
-                                    <a href="publication/@item.PublicationID" class="card-title">
+                                <a href="publication/@item.PublicationID" class="card-title">
                                     @item.PublicationTitle
                                 </a>
 
@@ -240,7 +254,7 @@
                     </div>
                 }
             }
-            else if (HasSearched && (SearchResults == null || !SearchResults.Any()))
+            else if (HasSearched && ( SearchResults == null || !SearchResults.Any() ))
             {
                 <div class="no-results">
                     <p>No items found matching your search criteria. Please try adjusting your search terms.</p>
@@ -267,7 +281,7 @@
                 <h2 class="modal-title">@SelectedPublication.PublicationTitle</h2>
                 <button class="close-btn" @onclick="CloseDetailModal">&times;</button>
             </div>
-            
+
             <div class="modal-body">
                 <div class="detail-section">
                     <h3>Publication Information</h3>
@@ -316,7 +330,7 @@
                     <h3>Description</h3>
                     <p>@SelectedPublication.Comments</p>
                 </div>
-
+                //2025-12-24 Internal Comments not displayed to public
                 @if (!string.IsNullOrEmpty(SelectedPublication.ShelfLocation))
                 {
                     <div class="detail-section">
@@ -345,13 +359,13 @@
                 <h2 class="modal-title">Request Historical Material</h2>
                 <button class="close-btn" @onclick="CloseRequestModal">&times;</button>
             </div>
-            
+
             <h3 style="color: #3498db; margin-bottom: 20px;">@RequestPublication.PublicationTitle</h3>
-            
+
             <EditForm Model="RequestForm" OnValidSubmit="SubmitRequest">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
-                
+
                 <div class="request-form">
                     <div class="request-type">
                         <label style="font-weight: bold; color: #2c3e50;">Request Type:</label>
@@ -404,8 +418,8 @@
 
                     <div class="form-field">
                         <label for="additionalInfo">Additional Information or Special Requests</label>
-                        <InputTextArea @bind-Value="RequestForm.AdditionalInfo" id="additionalInfo" 
-                                      placeholder="Please provide any additional details about your research or special handling requirements..." />
+                        <InputTextArea @bind-Value="RequestForm.AdditionalInfo" id="additionalInfo"
+                                       placeholder="Please provide any additional details about your research or special handling requirements..." />
                     </div>
 
                     <div style="text-align: center; margin-top: 25px;">
@@ -427,13 +441,13 @@
 }
 
 @code {
-    // Same @code section as your original file
     // Properties for search
     private PublicationSearchCriteria SearchCriteria = new();
     private List<PublicationSearchResult>? SearchResults;
     private List<CreatorDto>? Authors;
     private List<GenreDto>? Genres;
     private List<MediaTypeDto>? MediaTypes;
+    private List<string>? Keywords;
 
     // Pagination
     private int CurrentPage = 1;
@@ -468,22 +482,22 @@
     {
         try
         {
-            //Console.WriteLine("=== STARTING COLLECTION INITIALIZATION ===");
-           // Console.WriteLine("Loading dropdown data...");
+            Console.WriteLine("=== STARTING COLLECTION INITIALIZATION ===");
+            Console.WriteLine("Loading dropdown data...");
             await LoadDropdownData();
-            // Console.WriteLine("✓ Dropdown data loaded successfully");
-           // Console.WriteLine("Loading statistics...");    
+            Console.WriteLine("✓ Dropdown data loaded successfully");
+            Console.WriteLine("Loading statistics...");
             await LoadStatistics();
-            //Console.WriteLine("✓ Statistics loaded successfully");
+            Console.WriteLine("✓ Statistics loaded successfully");
 
-            //console.writeLine("=== INITIALIZATION COMPLETED ===");
+            Console.WriteLine("=== INITIALIZATION COMPLETED ===");
         }
         catch (Exception ex)
         {
-            //Console.WriteLine($"Dropdown error: {ex.Message}");
-           // Console.WriteLine($"💥 INITIALIZATION ERROR: {ex.Message}");
-          //  Console.WriteLine($"Stack trace: {ex.StackTrace}");
-            //Console.WriteLine($"Inner exception: {ex.InnerException?.Message}");
+            Console.WriteLine($"Dropdown error: {ex.Message}");
+            Console.WriteLine($"💥 INITIALIZATION ERROR: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            Console.WriteLine($"Inner exception: {ex.InnerException?.Message}");
         }
     }
 
@@ -494,10 +508,11 @@
             Authors = await PublicationService.GetAuthorsAsync();
             Genres = await PublicationService.GetGenresAsync();
             MediaTypes = await PublicationService.GetMediaTypesAsync();
+            Keywords = await PublicationService.GetAllKeywordsAsync();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            //Console.WriteLine($"Statistics error: {ex.Message}");
+            Console.WriteLine($"Statistics error: {ex.Message}");
             // Set defaults so page doesn't crash
             TotalPublications = 0;
             TotalPeriodicals = 0;
@@ -507,11 +522,11 @@
         try
         {
             await LoadStatistics();
-            //console.writeLine("Statistics loaded successfully");
+            Console.WriteLine("Statistics loaded successfully");
         }
         catch (Exception ex)
         {
-            //console.writeLine($"Statistics error: {ex.Message}");
+            Console.WriteLine($"Statistics error: {ex.Message}");
             // Set safe defaults
             TotalPublications = 0;
             TotalPeriodicals = 0;
@@ -607,15 +622,15 @@
     private async Task SubmitRequest()
     {
         IsSubmittingRequest = true;
-        
+
         try
         {
-            var result =  await PublicationService.SubmitRequestAsync(RequestForm);
-            
+            var result = await PublicationService.SubmitRequestAsync(RequestForm);
+
             var message = RequestForm.RequestType == "Abstract"
                 ? $"Thank you, {RequestForm.FirstName} {RequestForm.LastName}! Your request has been submitted successfully.\n\nWe will email you the PDF abstract within 1-2 business days.\n\nA confirmation email will be sent to {RequestForm.Email}."
                 : $"Thank you, {RequestForm.FirstName} {RequestForm.LastName}! Your request has been submitted successfully.\n\nWe will contact you within 2-3 business days to arrange pickup or viewing of the requested item.\n\nA confirmation email will be sent to {RequestForm.Email}.";
-            
+
             await JSRuntime.InvokeVoidAsync("alert", message);
             CloseRequestModal();
         }

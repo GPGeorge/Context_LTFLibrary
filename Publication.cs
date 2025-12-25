@@ -76,8 +76,8 @@ namespace LTF_Library_V1.Data.Models
         {
             get; set;
         }
-
-        [MaxLength(500)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+        [MaxLength(50)]
         public string? PubSort
         {
             get; set;
@@ -98,7 +98,7 @@ namespace LTF_Library_V1.Data.Models
             get; set;
         }
 
-        [Column("InteralComments")]
+        [Column("InternalComments")]
         public string? InternalComments
         {
             get; set;
@@ -275,6 +275,7 @@ namespace LTF_Library_V1.Data.Models
     [Table("tblParticipantStatus")]
     public class ParticipantStatus
     {
+        [Column("ParticipantStatusID")]
         [Key]
         public int ParticipantStatusID
         {
@@ -286,8 +287,15 @@ namespace LTF_Library_V1.Data.Models
         {
             get; set;
         }
+        [Column("ExtendedDescription")]
         [MaxLength(100)]
         public string? ExtendedDescription
+        {
+            get; set;
+        }
+        [Column("TransactionType")]
+        [MaxLength(10)]
+        public string? TransactionType
         {
             get; set;
         }
@@ -295,8 +303,10 @@ namespace LTF_Library_V1.Data.Models
         {
             get; set;
         }
-
-        public virtual ICollection<ParticipantStatus> ParticipantStatuses { get; set; } = new List<ParticipantStatus>();
+        public virtual ICollection<PublicationTransfer>? PublicationTransfers
+        {
+            get; set;
+        }
     }
 
 

@@ -6,6 +6,7 @@
 @inject IRequestService RequestService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@inject ILogger<PublicationDetail> Logger
 
 <PageTitle>@(Publication?.PublicationTitle ?? "Publication Details") - Lander Trail Foundation</PageTitle>
 
@@ -175,7 +176,7 @@
                         <p class="description-text">@Publication.Comments</p>
                     </div>
                 }
-
+                @* //2025-12-24  Internal Comments section not displayed to public *@
                 @if (Publication.Keywords.Any())
                 {
                     <div class="detail-section">
@@ -365,7 +366,7 @@ else
         }
         catch (Exception ex)
         {
-            // Log error if needed
+            Logger.LogError(ex, "Error in PublicationDetail");
             Publication = null;
         }
         finally
@@ -409,7 +410,7 @@ else
         }
         catch (Exception ex)
         {
-            // Handle error
+            Logger.LogError(ex, "Error in PublicationDetail");
             await JSRuntime.InvokeVoidAsync("alert", $"Error submitting request: {ex.Message}. Please contact us directly at (307) 883-2174.");
         }
         finally

@@ -1,5 +1,6 @@
 ﻿// Data/ApplicationDbContext.cs
 using LTF_Library_V1.Data.Models;
+using LTF_Library_V1.Constants;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -111,10 +112,15 @@ namespace LTF_Library_V1.Data
                 entity.Property(e => e.Shelf1).HasColumnName("Shelf");
             });
             // Configure ParticipantStatus entity (column name mapping)
+            //Added ExtendedDescription mapping 2025-12-22
+            //Added TransactionType and SortOrder mapping 2025-12-23
             modelBuilder.Entity<ParticipantStatus>(entity =>
             {
                 entity.Property(e => e.ParticipantStatusID).HasColumnName("ParticipantStatusID");
                 entity.Property(e => e.ParticipantStatus1).HasColumnName("ParticipantStatus");
+                entity.Property(e => e.ExtendedDescription).HasColumnName("ExtendedDescription");
+                entity.Property(e => e.TransactionType).HasColumnName("TransactionType");   
+                entity.Property(e => e.SortOrder).HasColumnName("SortOrder");       
             });
             // Configure the view
             modelBuilder.Entity<PendingPublicRequest>(entity =>
@@ -146,15 +152,16 @@ namespace LTF_Library_V1.Data
                     .WithMany(s => s.Publications)
                     .HasForeignKey(p => p.ShelfID)
                     .OnDelete(DeleteBehavior.SetNull);
-
+                // calculated PubsortTitle to ignore mapping
+                entity.Property(p => p.PubSort).HasComputedColumnSql();  // Tells EF this is computed
                 // Set default values
-                entity.Property(p => p.MediaConditionID).HasDefaultValue(5);
-                entity.Property(p => p.MediaTypeID).HasDefaultValue(1);
-                entity.Property(p => p.Volume).HasDefaultValue(1);
-                entity.Property(p => p.NumberOfVolumes).HasDefaultValue(1);
-                entity.Property(p => p.ConfidenceLevel).HasDefaultValue(90);
+                entity.Property(p => p.MediaConditionID).HasDefaultValue(PublicationDefaults.MediaCondition) ;
+                entity.Property(p => p.MediaTypeID).HasDefaultValue(PublicationDefaults.MediaType);
+                entity.Property(p => p.Volume).HasDefaultValue(PublicationDefaults.Volume);
+                entity.Property(p => p.NumberOfVolumes).HasDefaultValue(PublicationDefaults.NumberOfVolumes);
+                entity.Property(p => p.ConfidenceLevel).HasDefaultValue(PublicationDefaults.ConfidenceLevel);
                 entity.Property(p => p.DateCaptured).HasDefaultValueSql("GETDATE()");
-                entity.Property(p => p.ShelfID).HasDefaultValue(1);
+                entity.Property(p => p.ShelfID).HasDefaultValue(PublicationDefaults.Shelf);
             });
 
             modelBuilder.Entity<PublicationCreator>(entity =>
@@ -248,5 +255,41 @@ namespace LTF_Library_V1.Data
                     .HasDatabaseName("IX_tblPublisher_Publication");
             });
         }
+        //public override int SaveChanges(bool acceptAllChangesOnSuccess) to avoid errors on Null non-ZLS string fields
+        public override int SaveChanges()
+        {
+            ConvertEmptyStringsToNull();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            ConvertEmptyStringsToNull();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+    
+
+        // Helper method
+        private void ConvertEmptyStringsToNull()
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+            foreach (var entry in entries)
+            {
+                foreach (var property in entry.Properties)
+                {
+                    if (property.Metadata.ClrType == typeof(string))
+                    {
+                        if (string.IsNullOrWhiteSpace(property.CurrentValue as string))
+                        {
+                            property.CurrentValue = null;
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }

@@ -26,7 +26,7 @@ namespace LTF_Library_V1.Services
                     .Select(p => new PublisherDto
                     {
                         PublisherID = p.PublisherID,
-                        Publisher1 = p.Publisher1 ?? "",
+                        Publisher = p.Publisher1 ?? "",/* 2025-12-25*/
                         PublisherGoogle = p.PublisherGoogle
                     })
                     .ToListAsync();
@@ -51,7 +51,7 @@ namespace LTF_Library_V1.Services
                 return new PublisherDto
                 {
                     PublisherID = publisher.PublisherID,
-                    Publisher1 = publisher.Publisher1 ?? "",
+                    Publisher = publisher.Publisher1 ?? "",
                     PublisherGoogle = publisher.PublisherGoogle
                 };
             }
@@ -68,7 +68,7 @@ namespace LTF_Library_V1.Services
             {
                 // Check for duplicates
                 var existing = await _context.Publishers
-                    .FirstOrDefaultAsync(p => p.Publisher1 == publisherDto.Publisher1);
+                    .FirstOrDefaultAsync(p => p.Publisher1 == publisherDto.Publisher);
 
                 if (existing != null)
                 {
@@ -77,7 +77,7 @@ namespace LTF_Library_V1.Services
 
                 var publisher = new Publisher
                 {
-                    Publisher1 = publisherDto.Publisher1,
+                    Publisher1 = publisherDto.Publisher,
                     PublisherGoogle = publisherDto.PublisherGoogle
                 };
 
@@ -108,7 +108,7 @@ namespace LTF_Library_V1.Services
 
                 // Check for duplicates (excluding current record)
                 var existing = await _context.Publishers
-                    .FirstOrDefaultAsync(p => p.Publisher1 == publisherDto.Publisher1 &&
+                    .FirstOrDefaultAsync(p => p.Publisher1 == publisherDto.Publisher &&
                                             p.PublisherID != publisherDto.PublisherID);
 
                 if (existing != null)
@@ -116,7 +116,7 @@ namespace LTF_Library_V1.Services
                     return ServiceResult.Failed("A publisher with this name already exists.");
                 }
 
-                publisher.Publisher1 = publisherDto.Publisher1;
+                publisher.Publisher1 = publisherDto.Publisher;
                 publisher.PublisherGoogle = publisherDto.PublisherGoogle;
 
                 await _context.SaveChangesAsync();

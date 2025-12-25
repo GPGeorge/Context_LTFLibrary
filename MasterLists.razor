@@ -41,7 +41,7 @@
             </a>
             <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("MediaCondition"))"
                class="admin-nav-link @(ActiveTable == "MediaCondition" ? "active" : "")">
-                Media Condition
+                Media Conditions
             </a>
             <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("Participant"))"
                class="admin-nav-link @(ActiveTable == "Participant" ? "active" : "")">
@@ -49,7 +49,7 @@
             </a>
             <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("ParticipantStatus"))"
                class="admin-nav-link @(ActiveTable == "ParticipantStatus" ? "active" : "")">
-                Participant Status
+                Participant Statuses
             </a>
             <a href="javascript:void(0)" @onclick="@(() => SetActiveTable("Shelf"))"
                class="admin-nav-link @(ActiveTable == "Shelf" ? "active" : "")">
@@ -107,6 +107,13 @@
                             <th>Bookcase Name</th>
                             <th>Bookcase Description</th>
                         }
+                        else if (ActiveTable == "ParticipantStatus")
+                        {
+                            <th>Participant Status</th>
+                            <th>Extended Description</th>
+                            <th>Transaction Type</th>
+                            <th>Sort Order</th>
+                        }
                         else
                         {
                             <th>Name</th>
@@ -134,10 +141,18 @@
                                 <td>@participant?.ParticipantLastName</td>
                                 <td>@participant?.AlsoKnownAs</td>
                             }
+                            else if (ActiveTable == "ParticipantStatus")
+                            {
+                                var participantstatus = ParticipantStatuses?.FirstOrDefault(ps => ps.ParticipantStatusID == item.Id);
+                                <td>@item?.Name</td>
+                                <td>@item?.AdditionalField1</td>
+                                <td>@item?.AdditionalField2</td>
+                                <td> @item?.SortOrder</td>
+                            }
                             else if (ActiveTable == "Publisher")
                             {
                                 var publisher = Publishers?.FirstOrDefault(p => p.PublisherID == item.Id);
-                                <td>@publisher?.Publisher1</td>
+                                <td>@publisher?.Publisher</td>
                                 <td>@publisher?.PublisherGoogle</td>
                             }
                             else if (ActiveTable == "Shelf")
@@ -153,6 +168,7 @@
                                 <td>@bookcase?.Bookcase1</td>
                                 <td>@bookcase?.BookcaseDescription</td>
                             }
+
                             else
                             {
                                 <td>@item.Name</td>
@@ -193,7 +209,22 @@
             </div>
 
             <div class="processing-form">
-                @if (ActiveTable == "Creator" || ActiveTable == "Participant")
+                @if (ActiveTable == "Creator")
+                {
+                    <div class="form-field">
+                        <label>First Name:</label>
+                        <input type="text" @bind="EditItem.AdditionalField1" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label>Middle Name:</label>
+                        <input type="text" @bind="EditItem.AdditionalField2" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label>Last Name:</label>
+                        <input type="text" @bind="EditItem.AdditionalField3" class="form-control" />
+                    </div>
+                }
+                else if (ActiveTable == "Participant")
                 {
                     <div class="form-field">
                         <label>First Name:</label>
@@ -251,6 +282,25 @@
                         <input type="text" @bind="EditItem.AdditionalField1" class="form-control" />
                     </div>
                 }
+                else if (ActiveTable == "ParticipantStatus")
+                {
+                    <div class="form-field">
+                        <label>Participant Status:<span style="color: red;">*</span></label>
+                        <input type="text" @bind="EditItem.Name" class="form-control" required />
+                    </div>
+                    <div class="form-field">
+                        <label>Extended Description:</label>
+                        <input type="text" @bind="EditItem.AdditionalField1" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label>Transaction Type:</label>
+                        <input type="text" @bind="EditItem.AdditionalField2" class="form-control" />
+                    </div>
+                    <div class="form-field">
+                        <label>Sort Order:</label>
+                        <input type="number" @bind="EditItem.SortOrder" class="form-control" />
+                    </div>
+                }
                 else
                 {
                     <div class="form-field">
@@ -306,6 +356,7 @@
     private List<CreatorDto>? Creators;
     private List<PublisherDto>? Publishers;
     private List<ParticipantDto>? Participants;
+    private List<ParticipantStatusDto>? ParticipantStatuses;
     private List<ShelfDto>? Shelves;
 
     protected override async Task OnInitializedAsync()
@@ -356,7 +407,7 @@
                     Items = Publishers.Select(p => new MasterListItemDto
                     {
                         Id = p.PublisherID,
-                        Name = p.Publisher1,
+                        Name = p.Publisher,
                         AdditionalField1 = p.PublisherGoogle
                     }).ToList();
                     break;
@@ -379,7 +430,15 @@
                     break;
 
                 case "ParticipantStatus":
-                    Items = await MasterListService.GetItemsAsync("ParticipantStatus");
+                    var participantStatuses = await MasterListService.GetParticipantStatusesAsync();
+                    Items = participantStatuses.Select(ps => new MasterListItemDto
+                    {
+                        Id = ps.ParticipantStatusID,
+                        Name = ps.ParticipantStatus1,
+                        AdditionalField1 = ps.ExtendedDescription,
+                        AdditionalField2 = ps.TransactionType,
+                        SortOrder = ps.SortOrder
+                    }).ToList();
                     break;
 
                 case "Shelf":
@@ -452,7 +511,7 @@
             EditItem = new MasterListItemDto
             {
                 Id = item.Id,
-                Name = publisher?.Publisher1 ?? "",
+                Name = publisher?.Publisher ?? "",
                 AdditionalField1 = publisher?.PublisherGoogle                
             };
         }
@@ -476,6 +535,21 @@
                 Name = bookcase?.Bookcase1 ?? "",
                 AdditionalField1 = bookcase?.BookcaseDescription?.ToString()
             };
+        }
+        //Added   ParticipantStatus editing 2025-12-22 
+        else if (ActiveTable == "ParticipantStatus")
+        {
+            var participantstatus = ParticipantStatuses?.FirstOrDefault(ps => ps.ParticipantStatusID == item.Id);
+            EditItem = item;
+            //No need to map again as all fields are already in item
+            // new MasterListItemDto
+            // {
+            //     Id = item.Id,
+            //     Name =item.Name ?? "",
+            //     AdditionalField1 = item?.AdditionalField1?.ToString(),
+            //     AdditionalField2 = item?.AdditionalField2?.ToString(),
+            //     SortOrder = item?.SortOrder ?? 0
+            // };
         }
         else
         {
@@ -642,7 +716,7 @@
                     var PublisherDto = new PublisherDto
                     {
                         PublisherID = EditItem.Id,
-                        Publisher1 = EditItem.Name,
+                        Publisher = EditItem.Name,
                         PublisherGoogle = EditItem.AdditionalField1 
                     };
                     result = await MasterListService.UpdatePublisherAsync(PublisherDto);
@@ -651,7 +725,7 @@
                 {
                     var PublisherDto = new PublisherDto
                     {
-                        Publisher1 = EditItem.Name,
+                        Publisher = EditItem.Name,
                         PublisherGoogle = EditItem.AdditionalField1 
                     };
                     result = await MasterListService.AddPublisherAsync(PublisherDto);
@@ -740,7 +814,7 @@
             "MediaType" => "Media Types",
             "MediaCondition" => "Media Conditions",
             "Participant" => "Participants",
-            "ParticipantStatus" => "Participant Status",
+            "ParticipantStatus" => "Participant Statuses", //2025-12-22 Changed?
             "Shelf" => "Shelves",
             _ => ActiveTable
         };
